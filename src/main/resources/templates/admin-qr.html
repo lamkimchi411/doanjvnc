@@ -1,0 +1,91 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments :: head}"></head><body class="bg-[#f6f1e8] text-stone-800"><header th:replace="~{fragments :: header}"></header><main class="mx-auto max-w-7xl p-5 md:p-10">
+
+<div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+  <div>
+    <nav class="text-sm text-stone-400 mb-1"><a href="/admin">Quản trị</a> › Quản lý QR / Barcode</nav>
+    <h1>📋 Quản lý Định Danh Sản Phẩm — QR / Barcode</h1>
+    <p class="text-sm text-stone-500">Mỗi bộ Việt phục thực tế trong kho được cấp <strong>một mã serial/QR duy nhất</strong>. Dán tem lên nhãn áo để quét khi bàn giao và nhận trả.</p>
+  </div>
+  <a href="/admin/product/new" class="btn">+ Thêm mã đồ mới</a>
+  <button class="secondary no-print" onclick="window.print()">In danh sách tem QR / Barcode</button>
+</div>
+
+<!-- Hướng dẫn nhanh -->
+<div class="panel bg-amber-50 border-amber-200">
+  <h2 class="text-amber-800">🏷 Hướng dẫn dán tem QR</h2>
+  <ol class="list-decimal list-inside text-sm text-amber-700 space-y-1">
+    <li>In tem QR cho từng bộ bằng nút <b>"Mở tem để in"</b> bên dưới</li>
+    <li>Dán tem vào bên trong cổ áo / nhãn vải của từng bộ</li>
+    <li>Khi bàn giao: nhân viên quét mã → xác nhận đúng bộ trước khi giao</li>
+    <li>Khi nhận trả: quét lại để check-in và ghi nhận tình trạng</li>
+    <li>Hệ thống theo dõi: lượt thuê, lượt giặt, vòng đời từng bộ</li>
+  </ol>
+</div>
+
+<!-- Danh sách sản phẩm với QR -->
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
+  <article th:each="p:${products}" class="panel hover:shadow-md transition-shadow">
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <h2 class="text-base" th:text="${p.name}"></h2>
+        <p class="text-xs text-stone-400" th:text="${p.category+' · '+p.size+' · '+p.color}"></p>
+        <span th:if="${p.accessory}" class="inline-block bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded mt-1">Phụ kiện</span>
+      </div>
+      <!-- Trạng thái badge -->
+      <span class="text-xs font-semibold px-2 py-1 rounded-full"
+            th:text="${p.stockStatus}"
+            th:classappend="${'AVAILABLE'.equals(p.stockStatus) ? ' bg-green-100 text-green-700' :
+                            ('RENTED'.equals(p.stockStatus) ? ' bg-blue-100 text-blue-700' :
+                            ('WASHING'.equals(p.stockStatus) ? ' bg-teal-100 text-teal-700' :
+                            ('REPAIRING'.equals(p.stockStatus) ? ' bg-orange-100 text-orange-700' :
+                            ('RESERVED'.equals(p.stockStatus) ? ' bg-yellow-100 text-yellow-700' : ' bg-red-100 text-red-700'))))}">
+      </span>
+    </div>
+
+    <!-- QR Code -->
+    <div class="flex items-center gap-4 my-3">
+      <img th:src="@{/staff/label/{id}(id=${p.id})}" class="h-20 w-20 border border-stone-200" alt="QR code">
+      <div>
+        <p class="font-mono text-xs font-bold text-[#821f1c]" th:text="${p.barcode}"></p>
+        <a th:href="@{/staff/label/{id}(id=${p.id})}" target="_blank" class="text-xs btn mt-2 inline-block">🖨 In tem</a>
+      </div>
+    </div>
+    <img th:src="@{/staff/barcode/{id}(id=${p.id})}" class="h-10 w-full border border-stone-200 object-fill" alt="Barcode">
+
+    <!-- Thống kê vòng đời -->
+    <div class="grid grid-cols-3 gap-2 text-center text-xs border-t pt-3 mt-2">
+      <div>
+        <div class="font-bold text-blue-700 text-lg" th:text="${p.rentalCount}"></div>
+        <div class="text-stone-400">Lượt thuê</div>
+      </div>
+      <div>
+        <div class="font-bold text-teal-700 text-lg" th:text="${p.washCount}"></div>
+        <div class="text-stone-400">Lượt giặt</div>
+      </div>
+      <div>
+        <div class="font-bold text-stone-600 text-lg">
+          <span th:if="${p.rentalCount > 0}" th:text="${#numbers.formatDecimal(p.washCount * 100.0 / p.rentalCount, 1, 'DEFAULT', 0, 'DEFAULT') + '%'}"></span>
+          <span th:unless="${p.rentalCount > 0}">—</span>
+        </div>
+        <div class="text-stone-400">Giặt/thuê</div>
+      </div>
+    </div>
+
+    <!-- Phụ kiện đi kèm -->
+    <p th:if="${p.components != null and !p.components.isEmpty()}" class="text-xs text-stone-500 mt-2 border-t pt-2">
+      <span class="font-medium">Phụ kiện: </span><span th:text="${p.components}"></span>
+    </p>
+
+    <!-- Cảnh báo vòng đời -->
+    <div th:if="${p.rentalCount >= policy.retirementRentalThreshold or p.washCount >= policy.retirementWashThreshold}" class="mt-2 bg-orange-50 border border-orange-200 rounded p-2 text-xs text-orange-700">
+      ⚠ Vượt ngưỡng rà soát vòng đời (<span th:text="${p.rentalCount+' lượt thuê / '+p.washCount+' lượt giặt'}"></span>) — kiểm tra chất lượng và lên kế hoạch thanh lý.
+    </div>
+
+    <div class="flex gap-2 mt-3">
+      <a th:href="@{/admin/product/{id}(id=${p.id})}" class="secondary text-xs">✏ Chi tiết / sửa</a>
+    </div>
+  </article>
+</div>
+
+</main></body></html>

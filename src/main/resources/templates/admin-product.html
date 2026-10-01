@@ -1,0 +1,100 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments :: head}"></head><body class="bg-[#f6f1e8] text-stone-800"><header th:replace="~{fragments :: header}"></header><main class="mx-auto max-w-4xl p-5 md:p-10">
+
+<!-- Breadcrumb -->
+<nav class="text-sm text-stone-400 mb-3"><a href="/admin">Quản trị</a> › <span th:text="${product.id != null ? 'Chỉnh sửa mã đồ' : 'Thêm mã đồ mới'}"></span></nav>
+
+<form th:action="@{/admin/product}" method="post" enctype="multipart/form-data" class="panel">
+  <h1 th:text="${product.id != null ? 'Chỉnh sửa mã đồ #'+product.id : 'Thêm mã đồ Việt phục mới'}"></h1>
+  <p class="text-sm text-stone-500 mb-4">Mỗi lần tạo mới sẽ tự cấp một mã serial / QR riêng. Cùng mẫu nhưng hai bộ vật lý cần <strong>hai bản ghi riêng</strong>.</p>
+  <input name="id" type="hidden" th:value="${product.id}">
+  <label th:if="${product.id == null}">Số bộ vật lý cùng mẫu (mỗi bộ một serial riêng)<input name="quantity" type="number" min="1" max="100" value="1" required></label>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <label class="md:col-span-2">Tên (ví dụ: Nhật Bình Đỏ — Size M)<input name="name" th:value="${product.name}" required placeholder="Nhật Bình Đỏ"></label>
+    <label>Danh mục<input name="category" th:value="${product.category}" required placeholder="Nhật Bình"></label>
+    <label>Size
+      <select name="size">
+        <option th:each="v:${ {'S','M','L','XL','FreeSize'} }" th:text="${v}" th:selected="${v==product.size}"></option>
+      </select>
+    </label>
+    <label>Màu sắc<input name="color" th:value="${product.color}" required placeholder="Đỏ"></label>
+    <label>Phong cách<input name="style" th:value="${product.style}" required placeholder="Triều Nguyễn"></label>
+    <label>Giá thuê / ngày thường (đ)<input type="number" min="0" step="1000" name="dailyPrice" th:value="${product.dailyPrice}" required></label>
+    <label>Cọc bảo đảm (đ)<input type="number" min="0" step="10000" name="depositAmount" th:value="${product.depositAmount}" required></label>
+    <label class="md:col-span-1">
+      <span class="flex items-center gap-2 mt-6"><input type="checkbox" name="accessory" value="true" th:checked="${product.accessory}"> <b>Là phụ kiện</b> (mấn, trâm, bội…)</span>
+    </label>
+    <label class="md:col-span-3">Chi tiết phụ kiện đi kèm (liệt kê từng món)<input name="components" th:value="${product.components}" placeholder="Áo ngoài, áo lót, mấn, trâm 1, trâm 2, bội"></label>
+    <label class="md:col-span-3">Mô tả sản phẩm<textarea name="description" rows="3" th:text="${product.description}" placeholder="Mô tả nguồn gốc, chất liệu, hoạ tiết…"></textarea></label>
+    <label class="md:col-span-3">Ảnh JPEG/PNG (để trống nếu không thay đổi)<input type="file" name="image" accept="image/jpeg,image/png"></label>
+  </div>
+  <div class="flex gap-3 mt-4">
+    <button class="btn">Lưu mã đồ</button>
+    <a href="/admin" class="secondary">Quay lại</a>
+  </div>
+</form>
+
+<!-- Thông tin vòng đời nếu đã có sản phẩm -->
+<div th:if="${product.id != null}" class="grid md:grid-cols-3 gap-4 mt-5">
+  <!-- Thẻ định danh QR -->
+  <div class="panel text-center">
+    <h2>🏷 Mã QR / Barcode</h2>
+    <p class="font-mono text-sm font-bold text-[#821f1c]" th:text="${product.barcode}"></p>
+    <img th:src="@{/staff/label/{id}(id=${product.id})}" class="mx-auto my-3 h-40 w-40 border" alt="QR code">
+    <img th:src="@{/staff/barcode/{id}(id=${product.id})}" class="mx-auto my-2 h-10 w-full border object-fill" alt="Barcode">
+    <a th:href="@{/staff/label/{id}(id=${product.id})}" target="_blank" class="btn text-xs">🖨 Mở tem để in</a>
+    <p class="text-xs text-stone-400 mt-2">Dán tem lên nhãn áo để quét khi bàn giao / nhận trả</p>
+  </div>
+  <!-- Thống kê vòng đời -->
+  <div class="panel md:col-span-2">
+    <h2>📈 Vòng đời sản phẩm</h2>
+    <dl class="grid grid-cols-2 gap-4">
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div class="text-3xl font-bold text-blue-700" th:text="${product.rentalCount}"></div>
+        <div class="text-xs text-blue-500 mt-1">Tổng lượt cho thuê</div>
+      </div>
+      <div class="bg-teal-50 rounded-lg p-3 text-center">
+        <div class="text-3xl font-bold text-teal-700" th:text="${product.washCount}"></div>
+        <div class="text-xs text-teal-500 mt-1">Lượt giặt hấp</div>
+      </div>
+      <div class="bg-stone-50 rounded-lg p-3 text-center md:col-span-2">
+        <div class="text-lg font-bold" th:text="${product.stockStatus}"
+             th:classappend="${'AVAILABLE'.equals(product.stockStatus) ? ' text-green-600' :
+                             ('RENTED'.equals(product.stockStatus) ? ' text-blue-600' :
+                             ('WASHING'.equals(product.stockStatus) ? ' text-teal-600' :
+                             ('REPAIRING'.equals(product.stockStatus) ? ' text-orange-600' : ' text-red-600')))}">
+        </div>
+        <div class="text-xs text-stone-400 mt-1">Trạng thái kho hiện tại</div>
+      </div>
+    </dl>
+    <p class="text-xs text-stone-400 mt-3">Ngưỡng rà soát hiện tại: <span th:text="${policy.retirementRentalThreshold+' lượt thuê hoặc '+policy.retirementWashThreshold+' lượt giặt'}"></span>.</p>
+    <p th:if="${product.rentalCount >= policy.retirementRentalThreshold or product.washCount >= policy.retirementWashThreshold}" class="mt-2 text-sm text-orange-700 font-semibold">⚠ Mã đồ này đã đến ngưỡng rà soát thanh lý. Kiểm tra thực tế và chuyển trạng thái RETIRED nếu không còn đạt chất lượng.</p>
+  </div>
+</div>
+
+<!-- Lịch sử vòng đời -->
+<section class="panel" th:if="${!events.isEmpty()}">
+  <h2>📋 Lịch sử vòng đời</h2>
+  <div class="overflow-auto">
+    <table class="w-full text-sm">
+      <tr><th>Thời điểm</th><th>Trạng thái trước</th><th>→ Sau</th><th>Nhân viên</th><th>Ghi chú</th></tr>
+      <tr th:each="e:${events}">
+        <td th:text="${e.recordedAt}"></td>
+        <td><span class="text-stone-400" th:text="${e.previousStatus}"></span></td>
+        <td><span class="font-semibold" th:text="${e.nextStatus}"
+                  th:classappend="${'AVAILABLE'.equals(e.nextStatus) ? ' text-green-600' :
+                                  ('RENTED'.equals(e.nextStatus) ? ' text-blue-600' :
+                                  ('WASHING'.equals(e.nextStatus) ? ' text-teal-600' :
+                                  ('REPAIRING'.equals(e.nextStatus) ? ' text-orange-600' : ' text-red-500')))}">
+        </span></td>
+        <td th:text="${e.actor}"></td>
+        <td th:text="${e.note}"></td>
+      </tr>
+    </table>
+  </div>
+</section>
+<section class="panel" th:if="${events.isEmpty() and product.id != null}">
+  <p class="text-stone-400 text-sm text-center py-4">Chưa có lịch sử vận động cho mã đồ này.</p>
+</section>
+
+</main></body></html>

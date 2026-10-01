@@ -1,0 +1,16 @@
+<!doctype html><html xmlns:th="http://www.thymeleaf.org"><head th:fragment="head"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cổ Việt Lâu</title><script src="https://cdn.tailwindcss.com"></script><style type="text/tailwindcss">
+@layer components {
+ .panel { @apply bg-[#fffdf8] border border-[#b8955e]/30 rounded-lg p-5 my-5 shadow-sm; }
+ .btn { @apply inline-block bg-[#821f1c] text-white rounded px-4 py-2 text-sm hover:bg-[#631713]; }
+ .secondary { @apply inline-block border border-[#821f1c] text-[#821f1c] rounded px-3 py-2 text-sm; }
+ h1 { @apply text-3xl font-serif text-[#821f1c] mb-5; }
+ h2 { @apply text-xl font-serif text-[#821f1c] mb-3; }
+ label { @apply block text-sm text-stone-600; }
+ input:not([type=hidden]):not([type=checkbox]),select,textarea { @apply block w-full border border-stone-300 rounded bg-white p-2 mt-1 mb-3 text-stone-900; }
+ th,td { @apply p-3 border-b text-left text-sm; }
+ a { @apply text-[#821f1c]; }
+ small { @apply text-stone-500; }
+}
+@media print { .no-print,header,button,form {display:none!important} body,main,.panel {background:white!important;box-shadow:none!important} }
+@media (max-width:640px){body>header{padding:12px!important;align-items:flex-start}body>header>a img{height:42px}body>header nav{width:100%;gap:10px;font-size:14px!important;justify-content:flex-start}body>header nav a,body>header nav button{min-height:36px;display:inline-flex;align-items:center}main{padding-left:16px!important;padding-right:16px!important}h1{font-size:1.875rem!important}table{min-width:620px}.panel{padding:16px!important}}
+</style><script defer src="/js/ui.js"></script></head><body><header th:fragment="header" class="no-print bg-[#fffdf8] border-b border-[#b8955e]/30 px-5 py-4 flex flex-wrap items-center justify-between gap-3"><a href="/" aria-label="Cổ Việt Lâu"><img src="/images/co-viet-lau-logo.png" alt="Cổ Việt Lâu" class="h-14 w-auto object-contain"></a><nav class="flex flex-wrap items-center gap-4 text-base"><a href="/collection">Bộ sưu tập</a><a href="/cart">Giỏ đồ</a><a href="/appointments">Lịch thử đồ</a><a th:if="${signedIn}" href="/account">Tài khoản</a><a th:if="${isStaff}" href="/staff">POS</a><a th:if="${isAdmin}" href="/admin">Quản trị</a><a th:if="${isAdmin}" href="/">Trang chủ</a><a th:unless="${signedIn}" href="/login">Đăng nhập</a><form th:if="${signedIn}" th:action="@{/logout}" method="post"><button>Đăng xuất</button></form></nav></header></body></html>
