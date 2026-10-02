@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 @Controller @RequiredArgsConstructor
 public class StorefrontController {
+ private record CheckoutPreview(LocalDate start,LocalDate end,String fulfilment,String payment,String address,String code,boolean full) {}
  private final ProductRepository products; private final CustomerRepository customers; private final StaffAccountRepository staff; private final PolicyRepository policies;
  private final RentalOrderRepository orders; private final SiteImageRepository images; private final OrderLineRepository lines;
  private final ReviewRepository reviews; private final MoneyRepository money; private final TryOnAppointmentRepository appointments;
@@ -61,10 +62,15 @@ public class StorefrontController {
  }
  @PostMapping("/checkout/preview") String preview(@RequestParam LocalDate start,@RequestParam LocalDate end,@RequestParam String fulfilment,
   @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,
-  @RequestParam(defaultValue="false") boolean full,HttpSession s,Model m){
-  m.addAttribute("quote",ops.preview(new ArrayList<>(cart(s)),start,end,code,fulfilment,full));
-  m.addAttribute("start",start);m.addAttribute("end",end);m.addAttribute("fulfilment",fulfilment);m.addAttribute("payment",payment);
-  m.addAttribute("address",address);m.addAttribute("code",code);m.addAttribute("full",full);return "quote";
+  @RequestParam(defaultValue="false") boolean full,HttpSession s){
+  s.setAttribute("checkoutPreview",new CheckoutPreview(start,end,fulfilment,payment,address,code,full));return "redirect:/checkout/preview";
+ }
+ @GetMapping("/checkout/preview") String previewPage(HttpSession s,Model m){
+  var preview=(CheckoutPreview)s.getAttribute("checkoutPreview");
+  if(preview==null)return "redirect:/cart";
+  m.addAttribute("quote",ops.preview(new ArrayList<>(cart(s)),preview.start(),preview.end(),preview.code(),preview.fulfilment(),preview.full()));
+  m.addAttribute("start",preview.start());m.addAttribute("end",preview.end());m.addAttribute("fulfilment",preview.fulfilment());m.addAttribute("payment",preview.payment());
+  m.addAttribute("address",preview.address());m.addAttribute("code",preview.code());m.addAttribute("full",preview.full());return "quote";
  }
  @PostMapping("/checkout") String checkout(@RequestParam LocalDate start,@RequestParam LocalDate end,@RequestParam String fulfilment,
   @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,

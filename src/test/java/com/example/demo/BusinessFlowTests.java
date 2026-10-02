@@ -155,6 +155,7 @@ class BusinessFlowTests {
   mvc.perform(get("/collection")).andExpect(status().isOk());
   mvc.perform(get("/product/"+p.getId())).andExpect(status().isOk());
   mvc.perform(get("/login")).andExpect(status().isOk());
+  mvc.perform(get("/trang-khong-ton-tai").with(user("customer@test.vn").roles("CUSTOMER"))).andExpect(status().isNotFound());
   mvc.perform(get("/register")).andExpect(status().isOk());
   mvc.perform(get("/staff/register")).andExpect(status().isOk());
   mvc.perform(get("/staff")).andExpect(status().is3xxRedirection());
@@ -166,7 +167,8 @@ class BusinessFlowTests {
   mvc.perform(get("/account").with(user("customer@test.vn"))).andExpect(status().isOk());
   mvc.perform(post("/checkout/preview").session(session).with(user("customer@test.vn")).with(csrf())
    .param("start",LocalDate.now().toString()).param("end",LocalDate.now().toString()).param("fulfilment","PICKUP").param("payment","CASH"))
-   .andExpect(status().isOk());
+   .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/checkout/preview"));
+  mvc.perform(get("/checkout/preview").session(session).with(user("customer@test.vn"))).andExpect(status().isOk());
   var o=book(p,false);
   p.setAccessory(true);products.saveAndFlush(p);
   mvc.perform(get("/orders/"+o.getId()).with(user("customer@test.vn"))).andExpect(status().isOk());
@@ -175,6 +177,10 @@ class BusinessFlowTests {
   mvc.perform(get("/staff/label/"+p.getId()).with(user("employee@test.vn").roles("STAFF"))).andExpect(status().isOk()).andExpect(content().contentType("image/png"));
   mvc.perform(get("/staff/barcode/"+p.getId()).with(user("employee@test.vn").roles("STAFF"))).andExpect(status().isOk()).andExpect(content().contentType("image/png"));
   mvc.perform(get("/admin").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
+  mvc.perform(get("/admin/categories").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
+  mvc.perform(get("/admin/users").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
+  mvc.perform(get("/admin/appointments").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
+  mvc.perform(get("/admin/home-settings").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
   mvc.perform(get("/admin/product/"+p.getId()).with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
   mvc.perform(get("/admin/product/new").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
   mvc.perform(get("/admin/media").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
