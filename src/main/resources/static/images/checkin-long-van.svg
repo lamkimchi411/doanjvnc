@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+ <defs>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="60" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0ba"/><stop offset=".48" stop-color="#d4b477"/><stop offset="1" stop-color="#91632e"/></linearGradient>
+  <g id="dragon" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
+   <path d="M8 41C24 48 35 40 32 33C28 22 14 30 19 35C27 43 41 37 46 29C55 14 65 14 73 24C81 35 92 34 97 25" stroke-width="3"/>
+   <path d="M9 46C31 56 45 45 51 35C58 23 63 22 70 30C80 43 97 39 104 28M32 23L36 17L38 27M47 20L49 12L54 17M61 14L67 8L69 18" stroke-width="1.3"/>
+   <path d="M94 27L91 17L97 19L98 12L104 17L109 18L111 22L106 26L111 28L105 31L98 29Z" fill="#bc985b" stroke-width="1.2"/>
+   <path d="M96 16L92 8L100 12M102 15L104 6M110 22C120 17 120 26 114 26M103 31C103 42 90 44 88 38M69 33L64 41L71 40M49 34L42 43L49 43" stroke-width="1.4"/>
+   <circle cx="103" cy="21" r="1.2" fill="#45261c" stroke="none"/>
+   <path d="M12 52H101M22 56H91" stroke-width=".8" opacity=".7"/>
+  </g>
+ </defs>
+ <use href="#dragon"/><use href="#dragon" transform="translate(240 0) scale(-1 1)"/>
+ <path d="M120 8L128 21L120 34L112 21Z" stroke="url(#gold)" stroke-width="1.5" fill="#783b25"/>
+ <circle cx="120" cy="21" r="3" fill="#efd49a"/>
+ <path d="M105 45Q120 34 135 45M100 49Q120 39 140 49M111 51L120 56L129 51" stroke="url(#gold)" stroke-width="1.2"/>
+</svg>

@@ -1,0 +1,17 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments :: head}"></head><body class="bg-[#f6f1e8] text-stone-800"><header th:replace="~{fragments :: header}"></header><main class="mx-auto max-w-5xl p-5 md:p-10">
+<a class="secondary mb-5" th:href="@{/product/{id}(id=${product.id})}">← Quay lại sản phẩm</a>
+<section class="panel">
+  <h1>Ngày còn trống</h1>
+  <p class="mb-1">Lịch trống của <b th:text="${product.name}"></b> trong 14 ngày kế tiếp.</p>
+  <p class="text-sm text-stone-500">Chỉ hiển thị những ngày chưa có lịch thuê. Lịch được kiểm tra lại khi tạo đơn thuê.</p>
+</section>
+<section th:if="${#lists.isEmpty(availabilityDays)}" class="panel">
+  <p>Hiện chưa có ngày trống trong 14 ngày kế tiếp.</p>
+</section>
+<section th:unless="${#lists.isEmpty(availabilityDays)}" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <article th:each="day : ${availabilityDays}" class="panel !my-0 text-center">
+    <p class="text-sm text-stone-500">Ngày trống</p>
+    <h2 class="!mb-0" th:text="${#temporals.format(day, 'dd/MM/yyyy')}"></h2>
+  </article>
+</section>
+</main></body></html>

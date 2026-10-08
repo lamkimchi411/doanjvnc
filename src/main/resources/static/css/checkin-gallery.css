@@ -1,0 +1,54 @@
+/* Video căn giữa, giữ tỷ lệ 16:9 ở mọi kích thước màn hình. */
+.home-video{padding:40px 24px 24px;background:#FFFDF8}
+.home-video-player{max-width:960px;aspect-ratio:16/9;margin:0 auto;overflow:hidden;border:1px solid #d8c6aa;border-radius:4px;background:#191714;box-shadow:0 12px 30px #71543612}
+.home-video-player iframe{display:block;width:100%;height:100%;border:0}
+.home-video>p{display:flex;flex-wrap:wrap;justify-content:center;gap:24px;margin:16px 0 0;color:#80684d;font-size:13px}
+.home-video a:hover{text-decoration:underline}
+/* Khung long vân và phối cảnh cung đình dùng SVG/CSS, không cần JavaScript. */
+/* Chỉ hòa nền ảnh vào màu giấy, không làm mờ chữ, nút hay các khung sản phẩm. */
+.home-hero>div:first-child::after{content:"";position:absolute;inset:auto 0 0;height:180px;pointer-events:none;background:linear-gradient(to bottom,rgba(255,253,248,0),rgba(255,253,248,.35) 35%,rgba(255,253,248,.82) 72%,#FFFDF8)}
+.checkin-gallery{position:relative;isolation:isolate;padding:56px 30px 0;background:#FFFDF8;color:#713124}
+.checkin-gallery header{text-align:center;position:relative;z-index:2}
+.checkin-gallery header p:first-child{font-size:10px;letter-spacing:.28em;color:#9c7945}
+.checkin-gallery h2{font:clamp(28px,3vw,42px) Georgia,serif;margin:12px 0}
+.checkin-gallery header p{color:#80684d;font-size:14px}
+.checkin-gallery header::after{content:"";display:block;width:170px;height:40px;background:url('/images/checkin-long-van.svg') center/contain no-repeat;margin:14px auto 0}
+.checkin-stage{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) 14% minmax(0,1fr);align-items:center;min-height:490px;perspective:1400px;padding:38px 0 78px}
+/* Nền lát đá thu về điểm tụ, nằm sau cả hai dãy ảnh. */
+.checkin-stage::before{content:"";position:absolute;z-index:-2;inset:26% -30px 0;background:repeating-conic-gradient(from 84deg at 50% 0,#927b591a 0deg 1deg,transparent 1deg 12deg),repeating-linear-gradient(0deg,#ae977522 0 1px,transparent 1px 36px),linear-gradient(#f2e8d100,#c4af8a88);mask-image:linear-gradient(transparent,#000 48%)}
+.checkin-wing{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;position:relative;z-index:2;transform-style:preserve-3d}
+.checkin-left{transform:scale(.93) rotateY(14deg)}
+.checkin-right{grid-column:3;transform:scale(.93) rotateY(-14deg)}
+.checkin-frame{position:relative;min-width:0;margin:0;padding:7px 4px 5px;background:linear-gradient(105deg,#d8c6aa,#e8d8bf 48%,#c9b494);border:1px solid #c9b795;box-shadow:inset 0 0 0 1px #f5ecd9,2px 3px 0 -1px #bba586,0 12px 18px -10px #402d2133;animation:checkin-float 8s ease-in-out infinite;animation-delay:calc(var(--i)*-.85s)}
+/* Độ lệch cố định độc lập với animation để các khung luôn cao thấp so le. */
+.checkin-frame{top:var(--step,0px)}
+.checkin-left .checkin-frame:nth-child(2),.checkin-right .checkin-frame:nth-child(odd){--step:44px}
+/* Hoa văn long vân đối xứng trên đỉnh/chân khung, không che ảnh và phụ đề. */
+.checkin-frame::before,.checkin-frame::after{content:"";position:absolute;pointer-events:none;left:14%;width:72%;height:22px;background:url('/images/checkin-long-van.svg') center/100% 100% no-repeat;opacity:.55;filter:drop-shadow(0 1px 1px #b99b6e33)}
+.checkin-frame::before{top:-13px}
+.checkin-frame::after{bottom:-12px;transform:rotate(180deg);opacity:.45}
+.checkin-frame img,.checkin-empty{display:block;box-sizing:border-box;width:100%;height:244px;object-fit:cover;border:1px solid #d5c39f;background:#eee3cb}
+.checkin-frame figcaption{position:relative;min-height:68px;padding:16px 6px 12px;background:linear-gradient(110deg,#f9edcf,#fff9e9 48%,#eeddbb);color:#722e24;text-align:center;font:14px/1.5 Georgia,serif;overflow-wrap:anywhere;border:1px solid #c4a574;border-top:0}
+.checkin-frame figcaption::before{content:"";position:absolute;top:7px;left:35%;right:35%;height:1px;background:#b8955e}
+.checkin-empty{display:flex;flex-direction:column;justify-content:center;text-align:center;color:#97774b;font:14px/1.5 Georgia,serif;background:radial-gradient(ellipse,#fff9ea,#e9dabe)}
+.checkin-empty small{padding:12px 5px;font:10px/1.6 sans-serif;letter-spacing:.04em}
+.checkin-edit{display:block;text-align:center;color:#713124;font-size:11px;padding:8px 2px 0;text-decoration:underline;text-underline-offset:3px}
+/* Thảm viền kim tuyến và họa tiết thu nhỏ theo phối cảnh, thay hình tam giác phẳng. */
+.checkin-path{position:absolute;z-index:-1;left:29%;right:29%;top:30px;bottom:0;transform:perspective(500px) rotateX(43deg);transform-origin:50% 100%;clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);background:linear-gradient(90deg,#91764d 0%,#f1ddb0 3%,#ac8650 5%,#f5e3b4 7%,#651f23 8%,#8d3030 48%,#641f24 92%,#f5e3b4 93%,#ac8650 95%,#f1ddb0 97%,#91764d)}
+.checkin-path::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 56px,#eac58b55 57px 58px,transparent 59px 63px),url('/images/checkin-long-van.svg') center/110px 60px repeat-y;opacity:.55}
+.checkin-path::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#fff8df 0,transparent 32%,#fff1bb18 70%,transparent);animation:checkin-light 10s ease-in-out infinite}
+.checkin-path span{display:none}
+.checkin-gallery nav{position:relative;z-index:3;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.checkin-gallery nav a{border:1px solid #b8955e;border-radius:3px;padding:12px 24px;background:linear-gradient(#fffbed,#f0dfbf);box-shadow:0 3px 0 #b8955e33;color:#713124;transition:box-shadow .3s,background .3s}
+.checkin-gallery nav a:hover{background:#fffaf0;box-shadow:0 6px 20px #8d683d25}
+.checkin-gallery a:focus-visible{outline:3px solid #ad7c31;outline-offset:5px}
+.checkin-gallery:hover .checkin-frame,.checkin-gallery:focus-within .checkin-frame{animation-play-state:paused}
+@keyframes checkin-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes checkin-light{0%,100%{opacity:.55}50%{opacity:1}}
+@media(max-width:1000px){.checkin-stage{grid-template-columns:1fr;gap:50px;padding:40px 0 20px}.checkin-path{display:none}.checkin-wing{grid-column:1;transform:none;gap:15px}.checkin-stage::before{inset:15% -20px 0}.checkin-frame img,.checkin-empty{height:230px}}
+@media(max-width:540px){.checkin-wing{grid-template-columns:repeat(2,minmax(0,1fr));gap:38px 16px}.checkin-gallery{padding:36px 20px 0}.checkin-frame{padding:7px 4px 5px}.checkin-frame img,.checkin-empty{height:210px}.checkin-frame figcaption{font-size:14px}}
+/* Thu nhỏ độ lệch trên màn hình hẹp để không chạm khung ở hàng tiếp theo. */
+@media(max-width:1000px){.checkin-stage{padding-bottom:40px}.checkin-left .checkin-frame:nth-child(2),.checkin-right .checkin-frame:nth-child(odd){--step:18px}}
+@media(max-width:540px){.checkin-gallery .checkin-wing .checkin-frame:nth-child(n){--step:0px}.checkin-gallery .checkin-wing .checkin-frame:nth-child(even){--step:12px}}
+/* Tôn trọng lựa chọn giảm chuyển động của người xem. */
+@media(prefers-reduced-motion:reduce){.checkin-frame,.checkin-path::after{animation:none}.checkin-gallery nav a{transition:none}}

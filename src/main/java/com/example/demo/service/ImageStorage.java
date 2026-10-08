@@ -8,6 +8,23 @@ import javax.imageio.ImageIO;
 import java.util.UUID;
 @Service public class ImageStorage {
  @Value("${app.upload-dir:uploads}") private String folder;
+ public boolean hasUploadedImage(String url) {
+  if(url==null||!url.startsWith("/uploads/"))return false;
+  Path root=Path.of(folder).toAbsolutePath().normalize();
+  try {
+   Path file=root.resolve(url.substring("/uploads/".length())).normalize();
+   return file.getParent().equals(root)&&Files.isRegularFile(file);
+  } catch(InvalidPathException exception){return false;}
+ }
+ public void discardNewUpload(String url) {
+  if(url==null||!url.matches("/uploads/[0-9a-f-]{36}\\.(png|jpeg|jpg)"))return;
+  Path root=Path.of(folder).toAbsolutePath().normalize();
+  Path file=root.resolve(url.substring("/uploads/".length())).normalize();
+  if(!file.getParent().equals(root))return;
+  try {Files.deleteIfExists(file);} catch(IOException exception){
+   org.slf4j.LoggerFactory.getLogger(ImageStorage.class).warn("Không thể dọn ảnh mới sau giao dịch thất bại.");
+  }
+ }
  public String save(MultipartFile file) {
   if(file == null || file.isEmpty()) return "";
   if(file.getSize()>10*1024*1024) throw new IllegalArgumentException("Ảnh tối đa 10 MB.");

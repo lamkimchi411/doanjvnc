@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body class="bg-[#f6f1e8] text-stone-800">
+<header th:replace="~{fragments :: header}"></header>
+<main class="mx-auto max-w-3xl p-5 md:p-10">
+  <a th:href="@{/account}" class="secondary">Quay lại đơn hàng của tôi</a>
+  <section class="panel">
+    <h1 th:text="${'Chi tiết đơn mua CVL-M'+sale.id}"></h1>
+    <p class="text-sm mb-3">
+      <span class="font-semibold" th:text="${sale.displayStatus}"></span>
+    </p>
+    <dl class="grid gap-4">
+      <div><dt>Khách hàng</dt><dd th:text="${sale.customerName}"></dd></div>
+      <div><dt>Thời điểm tạo</dt><dd th:text="${sale.issuedAt == null ? '—' : #temporals.format(sale.issuedAt, 'dd/MM/yyyy HH:mm')}"></dd></div>
+      <div><dt>Sản phẩm</dt><dd th:text="${sale.productName}"></dd></div>
+      <div><dt>Mã sản phẩm</dt><dd th:text="${sale.productBarcode}"></dd></div>
+      <div><dt>Tổng tiền</dt><dd class="font-semibold" th:text="${#numbers.formatInteger(sale.salePrice,1,'POINT')+'đ'}"></dd></div>
+      <div><dt>Phương thức thanh toán</dt><dd th:text="${sale.paymentMethod == 'BANK' ? 'Chuyển khoản' : 'Tiền mặt'}"></dd></div>
+      <div><dt>Mã giao dịch</dt><dd th:text="${#strings.isEmpty(sale.paymentReference) ? '—' : sale.paymentReference}"></dd></div>
+    </dl>
+  </section>
+
+  <!-- Sửa đơn mua chưa thanh toán -->
+  <section th:if="${sale.editable}" class="panel">
+    <h2>✏️ Sửa đơn mua</h2>
+    <form th:action="@{/account/purchases/{id}/edit(id=${sale.id})}" method="post" class="grid gap-4">
+      <label>Tên khách hàng<input name="customerName" required maxlength="150" th:value="${sale.customerName}"></label>
+      <label>Sản phẩm
+        <select name="productId" required>
+          <option th:each="p:${availableProducts}" th:value="${p.id}"
+                  th:text="${p.name+' / '+p.barcode+' — '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"
+                  th:selected="${p.id == sale.product.id}">
+          </option>
+        </select>
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label>Thanh toán
+          <select name="paymentMethod">
+            <option value="CASH" th:selected="${sale.paymentMethod=='CASH'}">Tiền mặt</option>
+            <option value="BANK" th:selected="${sale.paymentMethod=='BANK'}">Chuyển khoản</option>
+          </select>
+        </label>
+        <label>Mã giao dịch<input name="paymentReference" maxlength="100" th:value="${sale.paymentReference}"></label>
+      </div>
+      <button class="btn">💾 Lưu thay đổi</button>
+    </form>
+    <form th:action="@{/account/purchases/{id}/delete(id=${sale.id})}" method="post" class="mt-4">
+      <button class="secondary" onclick="return confirm('Bạn có chắc muốn xóa đơn mua này?')">🗑 Xóa đơn mua</button>
+    </form>
+  </section>
+</main>
+</body>
+</html>

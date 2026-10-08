@@ -1,22 +1,41 @@
-/* Cổ Việt Lâu – UI helpers */
+/*
+ * JavaScript này chỉ phục vụ biểu tượng mắt: HTML không thể tự đổi kiểu của ô
+ * mật khẩu từ password sang text. Các luồng nghiệp vụ vẫn do Spring MVC xử lý.
+ */
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-toggle-password]');
+  if (!button) return;
+  const input = document.getElementById(button.dataset.togglePassword);
+  if (!input) return;
+  const visible = input.type === 'password';
+  input.type = visible ? 'text' : 'password';
+  button.setAttribute('aria-pressed', String(visible));
+  button.setAttribute('aria-label', visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  button.setAttribute('title', visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  button.querySelector('.eye-hidden')?.classList.toggle('hidden', visible);
+  button.querySelector('.eye-visible')?.classList.toggle('hidden', !visible);
+});
+
+/* HTML không tự cập nhật phần tóm tắt sau khi tick checkbox; đoạn này chỉ hiển thị các sản phẩm đã chọn. */
+function updateProductSummary(selector) {
+  const summary = selector.querySelector('[data-product-summary]');
+  if (!summary) return;
+  const selected = [...selector.querySelectorAll('input[name="productIds"]:checked')]
+    .map((checkbox) => checkbox.closest('label')?.querySelector('span')?.textContent.trim())
+    .filter(Boolean);
+  summary.textContent = selected.length ? selected.join(' · ') : 'Chọn sản phẩm đang có';
+}
+
+document.addEventListener('change', (event) => {
+  if (!event.target.matches('[data-product-selector] input[name="productIds"]')) return;
+  updateProductSummary(event.target.closest('[data-product-selector]'));
+});
+
+document.querySelectorAll('[data-product-selector]').forEach(updateProductSummary);
+
+if (false) { // Mã cũ chỉ được giữ làm tham chiếu và không bao giờ thực thi.
 (function () {
   'use strict';
-
-  /* ── Password toggle ── */
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-toggle-password]');
-    if (!btn) return;
-    const input = document.getElementById(btn.dataset.togglePassword);
-    if (!input) return;
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    btn.setAttribute('aria-pressed', String(show));
-    // update icon
-    const eyeOpen = btn.querySelector('.eye-open');
-    const eyeClosed = btn.querySelector('.eye-closed');
-    if (eyeOpen) eyeOpen.classList.toggle('hidden', !show);
-    if (eyeClosed) eyeClosed.classList.toggle('hidden', show);
-  });
 
   /* ── Mobile nav toggle ── */
   const menuBtn = document.getElementById('mobile-menu-btn');
@@ -55,14 +74,46 @@
 
   /* ── Auto-dismiss flash alerts ── */
   document.querySelectorAll('[data-auto-dismiss]').forEach(el => {
-    setTimeout(() => el.classList.add('opacity-0', 'transition-opacity', 'duration-500'), 3000);
-    setTimeout(() => el.remove(), 3600);
+    const delay = Number(el.dataset.autoDismiss) || 3000;
+    setTimeout(() => el.classList.add('opacity-0', 'transition-opacity', 'duration-500'), delay);
+    setTimeout(() => el.remove(), delay + 600);
   });
 
   /* ── Confirm dangerous actions ── */
   document.querySelectorAll('[data-confirm]').forEach(el => {
     el.addEventListener('click', (e) => {
       if (!confirm(el.dataset.confirm)) e.preventDefault();
+    });
+  });
+
+  /* ── In đơn thuê ── */
+  const printOrderButton = document.querySelector('[data-print-order]');
+  const printSuccess = document.getElementById('print-success');
+  if (printOrderButton && printSuccess) {
+    printOrderButton.addEventListener('click', () => {
+      window.print();
+      printSuccess.classList.remove('hidden');
+      printSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  /* ── Số thứ tự đơn và sản phẩm trong các bảng ── */
+  document.querySelectorAll('table').forEach(table => {
+    const headerRow = table.querySelector('tr');
+    if (!headerRow || headerRow.querySelector('[data-order-number]')) return;
+    const headerText = headerRow.textContent || '';
+    if (!headerText.includes('Mã đơn') && !headerText.includes('Danh sách bàn giao')) return;
+    const header = document.createElement('th');
+    header.dataset.orderNumber = 'true';
+    header.textContent = 'STT';
+    headerRow.prepend(header);
+    let number = 1;
+    table.querySelectorAll('tr').forEach(row => {
+      if (!row.querySelector('td')) return;
+      const cell = document.createElement('td');
+      cell.className = 'font-medium text-stone-500';
+      cell.textContent = String(number++);
+      row.prepend(cell);
     });
   });
 
@@ -90,4 +141,23 @@
       if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
     });
   });
+
+  /* ── Ảnh nội dung xuất hiện theo chuyển động; giữ nguyên ảnh phục vụ quét mã ── */
+  const motionImages = document.querySelectorAll('img:not([data-no-motion])');
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    const revealImage = (entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('image-revealed');
+        observer.unobserve(entry.target);
+      });
+    };
+    const imageObserver = new IntersectionObserver(revealImage, { threshold: 0.08, rootMargin: '0px 0px -24px' });
+    motionImages.forEach((image, index) => {
+      image.classList.add('image-motion');
+      image.style.transitionDelay = `${Math.min(index % 6, 5) * 90}ms`;
+      imageObserver.observe(image);
+    });
+  }
 })();
+}

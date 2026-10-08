@@ -5,4 +5,5 @@ import java.util.List;
 public interface OrderLineRepository extends JpaRepository<OrderLine,Long> {
  List<OrderLine> findByRentalOrderId(Long id);
  List<OrderLine> findByProductId(Long id);
+ boolean existsByProductId(Long productId);
 }

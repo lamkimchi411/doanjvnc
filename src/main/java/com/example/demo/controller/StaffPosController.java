@@ -12,18 +12,25 @@ import java.util.*;
 @Controller @RequestMapping("/staff") @RequiredArgsConstructor
 public class StaffPosController {
  private final ProductRepository products;private final RentalOrderRepository orders;private final OrderLineRepository lines;
- private final TryOnAppointmentRepository appointments;private final PenaltyRepository penalties;private final Operations ops;
+ private final PenaltyRepository penalties;private final Operations ops;private final PurchaseService purchases;
+ private final SaleInvoiceRepository saleInvoices;
  @GetMapping String dashboard(@RequestParam(defaultValue="") String scan,Model m){
   var all=orders.findAll().stream().sorted(Comparator.comparing(RentalOrder::getId).reversed()).toList();
   if(!scan.isBlank())all=all.stream().filter(o->lines.findByRentalOrderId(o.getId()).stream().anyMatch(l->scan.trim().equalsIgnoreCase(l.getBarcode()))).toList();
-  m.addAttribute("orders",all);m.addAttribute("products",products.findAll());m.addAttribute("appointments",appointments.findAll());
+  m.addAttribute("orders",all);m.addAttribute("products",products.findAll());
+  m.addAttribute("saleOrders",saleInvoices.findAll().stream().sorted(Comparator.comparing(SaleInvoice::getId).reversed()).toList());
+  m.addAttribute("saleProducts",products.findAll().stream().filter(p->"AVAILABLE".equals(p.getStockStatus())&&p.getSalePrice()!=null&&p.getSalePrice()>0).toList());
   m.addAttribute("penalties",penalties.findAll());m.addAttribute("policy",ops.policy());m.addAttribute("lineMap",orders.findAll().stream().collect(java.util.stream.Collectors.toMap(RentalOrder::getId,o->lines.findByRentalOrderId(o.getId()))));return "staff-pos";
  }
- @PostMapping("/quick-rental") String create(@RequestParam String customerName,@RequestParam String email,@RequestParam List<Long> productIds,
+ @PostMapping("/quick-rental") String create(@RequestParam String customerName,@RequestParam String email,@RequestParam String customerPhone,@RequestParam List<Long> productIds,
  @RequestParam LocalDate pickup,@RequestParam LocalDate returnDate,@RequestParam(defaultValue="") String code,Authentication a){
-  var o=ops.book(email,customerName,productIds,pickup,returnDate,"PICKUP","CASH","",code,false,a.getName());return "redirect:/orders/"+o.getId();
+  var o=ops.bookAtCounter(email,customerName,customerPhone,productIds,pickup,returnDate,code,a.getName());return "redirect:/orders/"+o.getId();
  }
- @PostMapping("/confirm/{id}") String confirm(@PathVariable Long id,@RequestParam String method,@RequestParam String reference,Authentication a){ops.confirm(id,method,reference,a.getName());return "redirect:/staff";}
+ @PostMapping("/sales") String createSaleOrder(@RequestParam Long productId,@RequestParam String customerName,@RequestParam String customerEmail,
+  @RequestParam String paymentMethod,@RequestParam(defaultValue="") String paymentReference){
+  purchases.createByStaff(productId,customerEmail,customerName,paymentMethod,paymentReference);return "redirect:/staff";
+ }
+ @PostMapping("/confirm/{id}") String confirm(@PathVariable Long id,@RequestParam String method,@RequestParam String reference,Authentication a){ops.confirmAtCounter(id,method,reference,a.getName());return "redirect:/staff";}
  @PostMapping("/prepare/{id}") String prepare(@PathVariable Long id){ops.prepare(id);return "redirect:/staff";}
  @PostMapping("/checkout/{id}") String checkout(@PathVariable Long id,@RequestParam String scanned,@RequestParam String condition,@RequestParam String collateral,
   @RequestParam String reference,@RequestParam String method,Authentication a){ops.checkout(id,scanned,condition,collateral,reference,method,a.getName());return "redirect:/orders/"+id;}
@@ -36,10 +43,19 @@ public class StaffPosController {
  }
  @PostMapping("/refund/{id}") String refund(@PathVariable Long id,@RequestParam String method,@RequestParam String reference,Authentication a){ops.refund(id,method,reference,a.getName());return "redirect:/orders/"+id;}
  @PostMapping("/stock/{id}") String stock(@PathVariable Long id,@RequestParam String stockStatus,Authentication a){ops.stock(id,stockStatus,a.getName());return "redirect:/staff";}
- @PostMapping("/appointment") String appointment(@RequestParam String email,@RequestParam String customerName,@RequestParam String phone,
-  @RequestParam LocalDateTime appointmentAt,@RequestParam(defaultValue="") String note){ops.appointment(email,customerName,phone,appointmentAt,note);return "redirect:/staff";}
- @PostMapping("/appointment/{id}") String appointmentStatus(@PathVariable Long id,@RequestParam String status){
-  if(!Set.of("Đã đến","Đã hủy").contains(status))throw new IllegalArgumentException("Trạng thái không hợp lệ.");
-  var ap=appointments.findById(id).orElseThrow();ap.setStatus(status);appointments.save(ap);return "redirect:/staff";
+ @PostMapping("/orders/{id}/edit") String editRentalOrder(@PathVariable Long id,@RequestParam List<Long> productIds,@RequestParam String customerName,
+  @RequestParam LocalDateTime start,@RequestParam LocalDateTime end,@RequestParam String fulfilment,
+  @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code){
+  ops.updateStaffOrder(id,productIds,customerName,start,end,fulfilment,payment,address,code);return "redirect:/staff";
+ }
+ @PostMapping("/orders/{id}/delete") String deleteRentalOrder(@PathVariable Long id){ops.deleteStaffOrder(id);return "redirect:/staff";}
+ @PostMapping("/sales/{id}/edit") String editSaleOrder(@PathVariable Long id,@RequestParam Long productId,@RequestParam String customerEmail,
+  @RequestParam String customerName,@RequestParam String paymentMethod,@RequestParam(defaultValue="") String paymentReference){
+  purchases.updateByStaff(id,productId,customerEmail,customerName,paymentMethod,paymentReference);return "redirect:/staff";
+ }
+ @PostMapping("/sales/{id}/delete") String deleteSaleOrder(@PathVariable Long id){purchases.deleteByStaff(id);return "redirect:/staff";}
+ @PostMapping("/sales/{id}/confirm") String confirmSaleOrder(@PathVariable Long id,@RequestParam String paymentMethod,
+  @RequestParam(defaultValue="") String paymentReference,Authentication a){
+  purchases.confirm(id,paymentMethod,paymentReference,a.getName());return "redirect:/staff";
  }
 }

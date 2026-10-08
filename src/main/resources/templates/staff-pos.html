@@ -71,59 +71,82 @@
   <p class="text-xs text-stone-400">Máy quét USB nhập mã như bàn phím. Khi bàn giao/nhận trả, quét đủ mã trong đơn, phân cách bằng dấu phẩy.</p>
 </div>
 
-<!-- Tạo đơn & Đặt lịch thử -->
-<div class="grid lg:grid-cols-2 gap-5">
-  <form th:action="@{/staff/quick-rental}" method="post" class="panel">
+<!-- Tạo đơn tại quầy -->
+<div class="mx-auto max-w-5xl">
+  <form th:action="@{/staff/quick-rental}" method="post" class="panel p-6 md:p-7">
     <h2>📝 Tạo đơn thuê tại quầy</h2>
-    <label>Tên khách hàng<input name="customerName" required placeholder="Nguyễn Văn A"></label>
-    <label>Email<input type="email" name="email" required placeholder="khach@email.com"></label>
-    <label>Chọn bộ đồ / phụ kiện <small>(Ctrl để chọn nhiều)</small>
-      <select name="productIds" multiple size="5" required>
-        <option th:each="p:${products}" th:value="${p.id}"
-                th:text="${p.name+' / '+p.size+' / '+p.barcode+(p.accessory?' [Phụ kiện]':'')}">
-        </option>
-      </select>
-    </label>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <label>Tên khách hàng<input name="customerName" required placeholder="Nguyễn Văn A"></label>
+      <label>Email<input type="email" name="email" required placeholder="khach@email.com"></label>
+      <label>Số điện thoại khách hàng<input type="tel" name="customerPhone" required maxlength="25" autocomplete="tel" placeholder="0901234567"></label>
+    </div>
+    <div>
+      <span class="block mb-1">Chọn bộ đồ / phụ kiện</span>
+      <details class="rounded border border-stone-300 bg-white" data-product-selector>
+        <summary class="cursor-pointer px-3 py-2 text-sm" data-product-summary>Chọn sản phẩm đang có</summary>
+        <fieldset class="max-h-64 overflow-y-auto border-t border-stone-200 p-3">
+          <label th:each="p:${products}" th:if="${p.stockStatus == 'AVAILABLE'}" class="flex cursor-pointer items-center gap-2 py-1 text-sm">
+            <input type="checkbox" name="productIds" th:value="${p.id}">
+            <span th:text="${p.name+' / '+p.size+' / '+p.barcode+(p.accessory?' [Phụ kiện]':'')}"></span>
+          </label>
+        </fieldset>
+      </details>
+      <small class="mt-1 block text-stone-500">Bấm mũi tên để chọn một hoặc nhiều sản phẩm.</small>
+    </div>
     <div class="grid grid-cols-2 gap-3">
       <label>Ngày nhận<input type="date" name="pickup" required></label>
       <label>Ngày trả<input type="date" name="returnDate" required></label>
     </div>
-    <label>Voucher / mã combo (để trống nếu không có)<input name="code" placeholder="COMBO_DOI, TET2025…"></label>
-    <button class="btn">Tạo đơn &amp; tính giá</button>
+    <div class="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+      <label>Voucher / mã combo (để trống nếu không có)<input name="code" placeholder="COMBO_DOI, TET2025…"></label>
+      <button class="btn mb-3">Tạo đơn &amp; tính giá</button>
+    </div>
   </form>
 
-  <form th:action="@{/staff/appointment}" method="post" class="panel">
-    <h2>📅 Đặt lịch thử đồ tại quầy</h2>
-    <label>Tên khách<input name="customerName" required></label>
-    <label>Email<input name="email" type="email" required></label>
-    <label>Điện thoại<input name="phone" required></label>
-    <label>Khung giờ 30 phút (08:00–17:30)<input type="datetime-local" name="appointmentAt" step="1800" required></label>
-    <label>Ghi chú<textarea name="note"></textarea></label>
-    <button class="btn">Đặt lịch</button>
-  </form>
 </div>
 
-<!-- Lịch thử đồ -->
+<!-- Đơn mua tại quầy -->
+<section class="panel mx-auto max-w-5xl p-6 md:p-7">
+  <h2>🛍️ Tạo đơn mua tại quầy</h2>
+  <p class="mb-4 text-sm text-stone-500">Đơn mới ở trạng thái chờ thanh toán; có thể sửa hoặc xóa trước khi xác nhận thu tiền.</p>
+  <form th:action="@{/staff/sales}" method="post" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <label>Tên khách hàng<input name="customerName" required maxlength="150" placeholder="Nguyễn Văn A"></label>
+    <label>Email khách hàng<input type="email" name="customerEmail" required placeholder="khach@email.com"></label>
+    <label>Sản phẩm mở bán<select name="productId" required><option value="" selected disabled>Chọn sản phẩm</option><option th:each="p:${saleProducts}" th:value="${p.id}" th:text="${p.name+' / '+p.size+' / '+p.barcode+' — '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"></option></select></label>
+    <label>Phương thức thanh toán<select name="paymentMethod"><option value="CASH">Tiền mặt</option><option value="BANK">Chuyển khoản</option></select></label>
+    <label>Mã giao dịch / phiếu thu<input name="paymentReference" maxlength="100" placeholder="Nhập khi đã có"></label>
+    <div class="flex items-end"><button class="btn mb-3">Tạo đơn mua chờ thanh toán</button></div>
+  </form>
+</section>
+
 <section class="panel">
-  <h2>📅 Danh sách lịch thử đồ</h2>
-  <div th:if="${appointments.isEmpty()}" class="text-stone-400 text-sm text-center py-4">Chưa có lịch thử đồ nào.</div>
-  <div th:each="ap:${appointments}" class="border-b py-3 flex flex-wrap gap-4 justify-between items-center">
-    <div>
-      <p class="font-medium" th:text="${ap.customerName+' · '+ap.phone}"></p>
-      <p class="text-sm text-stone-500" th:text="${ap.appointmentAt}"></p>
-      <p th:if="${ap.note != null and !ap.note.isEmpty()}" class="text-xs text-stone-400" th:text="${'Ghi chú: '+ap.note}"></p>
+  <h2>🧾 Danh sách đơn mua</h2>
+  <p th:if="${#lists.isEmpty(saleOrders)}" class="text-stone-500">Chưa có đơn mua.</p>
+  <article th:each="sale:${saleOrders}" class="border-b border-stone-200 py-5 last:border-b-0">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h3 class="font-semibold text-[#821f1c]" th:text="${'CVL-M'+sale.id+' · '+sale.productName}"></h3>
+        <p class="text-sm" th:text="${sale.customerName+' · '+sale.customerEmail}"></p>
+        <p class="text-sm text-stone-500" th:text="${sale.productBarcode+' · '+#numbers.formatInteger(sale.salePrice,1,'POINT')+'đ'}"></p>
+      </div>
+      <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800" th:text="${sale.displayStatus}"></span>
     </div>
-    <div class="flex items-center gap-3">
-      <span th:text="${ap.status}"
-            class="text-xs px-3 py-1 rounded-full font-semibold"
-            th:classappend="${'Đã đặt lịch'.equals(ap.status) ? ' bg-yellow-100 text-yellow-700' : ('Đã đến'.equals(ap.status) ? ' bg-green-100 text-green-700' : ' bg-stone-100 text-stone-400')}">
-      </span>
-      <form th:if="${ap.status=='Đã đặt lịch'}" th:action="@{/staff/appointment/{id}(id=${ap.id})}" method="post" class="flex gap-2">
-        <button name="status" value="Đã đến" class="secondary text-xs">✅ Đã đến</button>
-        <button name="status" value="Đã hủy" class="secondary text-xs text-red-600">✕ Hủy</button>
+    <details th:if="${sale.editable}" class="mt-4 border-t border-stone-200 pt-4">
+      <summary class="cursor-pointer font-semibold text-[#821f1c]">✏️ Sửa đơn mua</summary>
+      <form th:action="@{/staff/sales/{id}/edit(id=${sale.id})}" method="post" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <label>Tên khách hàng<input name="customerName" required maxlength="150" th:value="${sale.customerName}"></label>
+      <label>Email khách hàng<input type="email" name="customerEmail" required th:value="${sale.customerEmail}"></label>
+      <label>Sản phẩm<select name="productId" required><option th:each="p:${saleProducts}" th:value="${p.id}" th:selected="${p.id == sale.product.id}" th:text="${p.name+' / '+p.size+' / '+p.barcode+' — '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"></option></select></label>
+      <label>Phương thức thanh toán<select name="paymentMethod"><option value="CASH" th:selected="${sale.paymentMethod == 'CASH'}">Tiền mặt</option><option value="BANK" th:selected="${sale.paymentMethod == 'BANK'}">Chuyển khoản</option></select></label>
+      <label>Mã giao dịch / phiếu thu<input name="paymentReference" maxlength="100" th:value="${sale.paymentReference}"></label>
+      <div class="flex items-end"><button class="secondary mb-3">Lưu thay đổi</button></div>
       </form>
-    </div>
-  </div>
+      <div class="mt-2 flex flex-wrap gap-3">
+      <form th:action="@{/staff/sales/{id}/confirm(id=${sale.id})}" method="post" class="flex flex-wrap items-end gap-2"><input type="hidden" name="paymentMethod" th:value="${sale.paymentMethod}"><input type="hidden" name="paymentReference" th:value="${sale.paymentReference}"><button class="btn">Xác nhận đã thanh toán</button></form>
+      <form th:action="@{/staff/sales/{id}/delete(id=${sale.id})}" method="post"><button class="secondary">Xóa đơn mua</button></form>
+      </div>
+    </details>
+  </article>
 </section>
 
 <!-- Danh sách đơn hàng -->
@@ -132,15 +155,17 @@
   <div class="flex flex-wrap justify-between items-start gap-3 mb-2">
     <div>
       <h2 th:text="${'#CVL-'+o.id+' · '+o.customerName}" class="text-base mb-1"></h2>
+      <p th:if="${!#strings.isEmpty(o.customerPhone)}" class="text-sm" th:text="${'SĐT: '+o.customerPhone}"></p>
       <p class="text-sm text-stone-500" th:text="${o.pickupDate+' → '+o.returnDate+' · '+(o.fulfilment=='DELIVERY'?'🚚 Giao hàng':'🏪 Tại quầy')}"></p>
       <div class="flex flex-wrap gap-2 mt-1">
         <span th:each="l:${lineMap[o.id]}" class="text-xs bg-stone-100 px-2 py-0.5 rounded font-mono" th:text="${l.name+' / '+l.barcode}"></span>
       </div>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-start gap-3">
       <!-- Status badge -->
+      <div class="text-right">
       <span class="text-xs font-bold px-3 py-1 rounded-full"
-            th:text="${o.status}"
+            th:text="${o.holdExpired ? 'Hết hạn giữ chỗ' : o.status}"
             th:classappend="${'Chờ thanh toán'.equals(o.status) ? ' bg-amber-100 text-amber-700' :
                             ('Đã cọc giữ lịch'.equals(o.status) ? ' bg-yellow-100 text-yellow-700' :
                             ('Đang chuẩn bị đồ'.equals(o.status) ? ' bg-sky-100 text-sky-700' :
@@ -148,7 +173,10 @@
                             ('Đã trả đồ'.equals(o.status) ? ' bg-orange-100 text-orange-700' :
                             ('Đã hoàn cọc'.equals(o.status) ? ' bg-purple-100 text-purple-700' : ' bg-stone-100 text-stone-500')))))}">
       </span>
+      <p th:if="${o.holdExpired}" class="mt-1 text-xs font-medium text-red-700" th:text="${'Chưa nhận cọc, hết hạn lúc '+#temporals.format(o.holdUntil, 'dd/MM HH:mm')}"></p>
+      </div>
       <a th:href="@{/orders/{id}(id=${o.id})}" class="secondary text-xs">Chi tiết / in biên bản →</a>
+      <a th:if="${o.editable}" th:href="@{/orders/{id}(id=${o.id})}" class="secondary text-xs">Sửa đơn thuê</a>
     </div>
   </div>
 
@@ -260,47 +288,6 @@
     </div>
     <button class="btn mt-2">✅ Đã thu thêm (nếu có), Hoàn cọc &amp; Trả giấy tờ</button>
   </form>
-</section>
-
-<!-- Kho / giặt / sửa chữa -->
-<section class="panel mt-6">
-  <h2>🏪 Quản lý Kho — Giặt hấp / Sửa chữa</h2>
-  <p class="text-sm text-stone-500 mb-4">Cập nhật trạng thái bảo dưỡng sau khi nhận trả. Khi hoàn tất giặt hấp → chuyển về AVAILABLE để tiếp tục cho thuê.</p>
-  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <article th:each="p:${products}" class="border rounded-lg p-4 bg-white">
-      <div class="flex justify-between items-start mb-2">
-        <div>
-          <h2 class="text-sm font-semibold" th:text="${p.name}"></h2>
-          <p class="text-xs text-stone-400 font-mono" th:text="${p.barcode}"></p>
-        </div>
-        <span class="text-xs font-bold px-2 py-1 rounded-full"
-              th:text="${p.stockStatus}"
-              th:classappend="${'AVAILABLE'.equals(p.stockStatus) ? ' bg-green-100 text-green-700' :
-                              ('RENTED'.equals(p.stockStatus) ? ' bg-blue-100 text-blue-700' :
-                              ('WASHING'.equals(p.stockStatus) ? ' bg-teal-100 text-teal-700' :
-                              ('REPAIRING'.equals(p.stockStatus) ? ' bg-orange-100 text-orange-700' :
-                              ('RESERVED'.equals(p.stockStatus) ? ' bg-yellow-100 text-yellow-700' : ' bg-red-100 text-red-600'))))}">
-        </span>
-      </div>
-      <p class="text-xs text-stone-400 mb-2" th:text="${'Thuê: '+p.rentalCount+' lần · Giặt: '+p.washCount+' lần'}"></p>
-      <details class="mb-2">
-        <summary class="text-xs text-[#821f1c] cursor-pointer">📷 Tem QR</summary>
-        <div class="mt-2 text-center">
-          <img th:src="@{/staff/label/{id}(id=${p.id})}" class="h-24 w-24 mx-auto border" alt="QR">
-          <a th:href="@{/staff/label/{id}(id=${p.id})}" target="_blank" class="text-xs text-[#821f1c] block mt-1">Mở tem để in</a>
-        </div>
-      </details>
-      <form th:action="@{/staff/stock/{id}(id=${p.id})}" method="post" class="flex gap-2">
-        <select name="stockStatus" class="flex-1 text-xs">
-          <option>AVAILABLE</option>
-          <option>WASHING</option>
-          <option>REPAIRING</option>
-          <option>RETIRED</option>
-        </select>
-        <button class="secondary text-xs">Cập nhật</button>
-      </form>
-    </article>
-  </div>
 </section>
 
 </main></body></html>

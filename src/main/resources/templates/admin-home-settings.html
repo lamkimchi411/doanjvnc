@@ -21,7 +21,24 @@
         <label>Liên kết Facebook / mạng xã hội<input type="url" name="storeSocialUrl" th:value="${policy.storeSocialUrl}" required></label>
       </div>
     </section>
+    <section class="panel" id="home-video">
+      <h2>Video giữa trang chủ</h2>
+      <label>Link YouTube<input type="url" name="homeVideoUrl" th:value="${policy.homeVideoUrl}" maxlength="1000" placeholder="https://www.youtube.com/watch?v=..."></label>
+      <p>Video nằm dưới hero, trên mục Cảnh đẹp &amp; góc check-in. Nhận link YouTube, youtu.be, Shorts hoặc embed. Để trống để ẩn video, rồi bấm Lưu toàn bộ cài đặt trang chủ.</p>
+    </section>
     <section class="panel">
+      <h2>Ba khung ảnh ban ngày</h2>
+      <div class="grid gap-4 md:grid-cols-3">
+        <label th:each="slot, stat:${daySlots}"><span th:text="${'Khung '+stat.count}"></span>
+          <select name="dayProductIds"><option value="">Tự chọn</option><option th:each="p:${collectionProducts}" th:value="${p.id}" th:selected="${slot == p.id.toString()}" th:text="${p.name+' / '+p.barcode}"></option></select>
+        </label>
+      </div>
+      <h2>Ba khung ảnh ban đêm</h2>
+      <div class="grid gap-4 md:grid-cols-3">
+        <label th:each="slot, stat:${nightSlots}"><span th:text="${'Khung '+stat.count}"></span>
+          <select name="nightProductIds"><option value="">Tự chọn</option><option th:each="p:${collectionProducts}" th:value="${p.id}" th:selected="${slot == p.id.toString()}" th:text="${p.name+' / '+p.barcode}"></option></select>
+        </label>
+      </div>
       <div class="mb-4"><h2>Hình ảnh trang chủ</h2><p class="text-sm text-stone-500">Chỉ chọn ảnh mới tại vị trí cần thay đổi. Ảnh JPEG/PNG, tối đa 10 MB.</p></div>
       <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         <article th:each="i : ${images}" class="overflow-hidden rounded-lg border border-[#b8955e]/30 bg-white">
@@ -31,6 +48,21 @@
             <label>Tiêu đề ảnh<input name="imageTitles" th:value="${i.title}" required></label>
             <label>Thay ảnh <small>(không bắt buộc)</small><input type="file" name="imageFiles" accept="image/jpeg,image/png"></label>
           </div>
+        </article>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>6 ảnh cảnh đẹp / check-in</h2>
+      <p>Ảnh 1–3 ở bên trái, ảnh 4–6 ở bên phải. JPEG/PNG tối đa 10 MB/ảnh, tổng biểu mẫu tối đa 200 MB. Không chọn file mới sẽ giữ ảnh cũ.</p>
+      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <article th:each="frame,stat:${checkinFrames}" th:id="${frame.slot}" class="rounded-lg border p-3">
+          <h3 th:text="${(stat.index lt 3 ? 'Bên trái · ' : 'Bên phải · ') + 'Ảnh '+stat.count}"></h3>
+          <img th:if="${!#strings.isEmpty(frame.imageUrl)}" th:src="${frame.imageUrl}" th:alt="${frame.title}" class="h-44 w-full object-cover">
+          <p th:if="${#strings.isEmpty(frame.imageUrl)}">Chưa có ảnh</p>
+          <label>Phụ đề dưới ảnh<input name="checkinTitles" th:value="${frame.title}" maxlength="120" required></label>
+          <small>Phụ đề hiển thị dưới ảnh trang chủ, tối đa 120 ký tự. Có thể sửa riêng mà không tải lại ảnh.</small>
+          <label>Thêm / thay ảnh<input type="file" name="checkinFiles" accept="image/jpeg,image/png"></label>
+          <label><input type="checkbox" name="removeCheckin" th:value="${frame.slot}"> Gỡ ảnh khỏi trang chủ</label>
         </article>
       </div>
     </section>

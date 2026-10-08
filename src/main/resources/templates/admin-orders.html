@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body class="bg-[#f6f1e8] text-stone-800">
+<header th:replace="~{fragments :: header}"></header>
+<main class="mx-auto max-w-7xl p-5 md:p-10">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div><nav class="mb-1 text-sm text-stone-400"><a href="/admin">Quản trị</a> › Đơn hàng</nav><h1>Đơn hàng</h1><p class="text-stone-500">Theo dõi chung đơn thuê và đơn mua của cửa hàng.</p></div>
+  </div>
+
+  <section class="panel overflow-auto">
+    <h2>Đơn thuê</h2>
+    <table class="w-full"><thead><tr><th>STT</th><th>Mã đơn</th><th>Khách hàng</th><th>Thời gian thuê</th><th>Trạng thái</th><th class="text-right">Tiền thuê</th><th>Thao tác</th></tr></thead>
+      <tbody><tr th:each="order, stat:${rentalOrders}"><td th:text="${stat.count}"></td><td th:text="${'CVL-'+order.id}"></td><td><span th:text="${order.customerName}"></span><small class="block" th:text="${order.customerEmail}"></small></td><td th:text="${order.pickupDate+' → '+order.returnDate}"></td><td><b th:text="${order.holdExpired ? 'Hết hạn giữ chỗ' : order.status}"></b><small th:if="${order.holdExpired}" class="block font-medium text-red-700" th:text="${'Chưa nhận cọc, hết hạn lúc '+#temporals.format(order.holdUntil, 'dd/MM HH:mm')}"></small></td><td class="text-right" th:text="${#numbers.formatInteger(order.rentalTotal,1,'POINT')+'đ'}"></td><td class="min-w-56">
+        <a class="secondary" th:href="@{/orders/{id}(id=${order.id})}">Chi tiết</a>
+
+        <!-- Chuyển trạng thái đơn chờ thanh toán -->
+        <form th:if="${order.status == 'Chờ thanh toán'}" th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="mt-2 grid gap-2">
+          <select name="status" aria-label="Trạng thái mới"><option value="Đã cọc giữ lịch">Xác nhận đã cọc</option><option value="Đã hủy">Hủy đơn</option></select>
+          <select name="paymentMethod" aria-label="Phương thức thanh toán"><option value="CASH">Tiền mặt</option><option value="BANK">Chuyển khoản</option></select>
+          <input name="paymentReference" maxlength="120" th:value="${order.bookingPaymentReference}" placeholder="Mã giao dịch nếu chuyển khoản">
+          <button class="secondary w-full">Cập nhật trạng thái</button>
+        </form>
+
+        <!-- Sửa đơn thuê chưa thanh toán -->
+        <details th:if="${order.editable}" class="mt-2">
+          <summary class="text-xs text-[#821f1c] cursor-pointer">✏️ Sửa đơn thuê</summary>
+          <form th:action="@{/admin/orders/{id}/edit(id=${order.id})}" method="post" class="mt-2 grid gap-2">
+            <label class="text-xs">Tên khách<input name="customerName" required maxlength="150" th:value="${order.customerName}"></label>
+            <label class="text-xs">Bộ đồ <small>(Ctrl chọn nhiều)</small>
+              <select name="productIds" multiple size="3" required>
+                <option th:each="p:${products}" th:value="${p.id}" th:selected="${#lists.contains(rentalProductIds[order.id],p.id)}" th:text="${p.name+' / '+p.barcode+(p.accessory?' [PK]':'')}"></option>
+              </select>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-xs">Nhận đồ<input type="datetime-local" name="start" required th:value="${order.pickupAt}"></label>
+              <label class="text-xs">Trả đồ<input type="datetime-local" name="end" required th:value="${order.returnAt}"></label>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-xs">Hình thức<select name="fulfilment"><option value="PICKUP" th:selected="${order.fulfilment=='PICKUP'}">Tại quầy</option><option value="DELIVERY" th:selected="${order.fulfilment=='DELIVERY'}">Giao hàng</option></select></label>
+              <label class="text-xs">Thanh toán<select name="payment"><option value="CASH" th:selected="${order.paymentMethod=='CASH'}">Tiền mặt</option><option value="BANK" th:selected="${order.paymentMethod=='BANK'}">CK</option></select></label>
+            </div>
+            <label class="text-xs">Địa chỉ<input name="address" maxlength="300" th:value="${order.address}"></label>
+            <label class="text-xs">Voucher<input name="code" maxlength="50" th:value="${order.voucherCode}"></label>
+            <button class="secondary w-full">💾 Lưu sửa đơn</button>
+          </form>
+          <form th:action="@{/admin/orders/{id}/delete(id=${order.id})}" method="post" class="mt-2">
+            <button class="secondary w-full text-red-700" onclick="return confirm('Xóa đơn thuê CVL-'+[[${order.id}]]+'?')">🗑 Xóa đơn</button>
+          </form>
+        </details>
+
+        <form th:if="${order.status == 'Đã cọc giữ lịch'}" th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="mt-2"><input type="hidden" name="status" value="Đang chuẩn bị đồ"><button class="secondary w-full">Chuyển sang chuẩn bị</button></form>
+        <small th:if="${order.status == 'Đang chuẩn bị đồ' or order.status == 'Đã lấy đồ / Đang mặc' or order.status == 'Đã trả đồ'}" class="mt-2 block">Bàn giao, nhận trả và hoàn cọc được xử lý tại POS.</small>
+      </td></tr></tbody>
+    </table>
+    <p th:if="${#lists.isEmpty(rentalOrders)}">Chưa có đơn thuê.</p>
+  </section>
+
+  <section class="panel overflow-auto">
+    <h2>Đơn mua</h2>
+    <table class="w-full"><thead><tr><th>STT</th><th>Mã đơn</th><th>Thời điểm</th><th>Khách hàng</th><th>Sản phẩm</th><th>Trạng thái</th><th>Thanh toán</th><th class="text-right">Tổng tiền</th><th>Thao tác</th></tr></thead>
+      <tbody><tr th:each="sale, stat:${saleOrders}"><td th:text="${stat.count}"></td><td th:text="${'CVL-M'+sale.id}"></td><td th:text="${sale.issuedAt}"></td><td><span th:text="${sale.customerName}"></span><small class="block" th:text="${sale.customerEmail}"></small></td><td><span th:text="${sale.productName}"></span><small class="block font-mono" th:text="${sale.productBarcode}"></small></td>
+        <td><b th:text="${sale.displayStatus}"></b></td>
+        <td th:text="${sale.paymentMethod=='BANK' ? 'Chuyển khoản' : 'Tiền mặt'}"></td><td class="text-right" th:text="${#numbers.formatInteger(sale.salePrice,1,'POINT')+'đ'}"></td>
+        <td class="min-w-56">
+          <!-- Xác nhận thanh toán đơn mua -->
+          <details th:if="${sale.editable}" class="mb-2">
+            <summary class="text-xs text-emerald-700 cursor-pointer">✅ Xác nhận thanh toán</summary>
+            <form th:action="@{/admin/sales/{id}/confirm(id=${sale.id})}" method="post" class="mt-2 grid gap-2">
+              <select name="paymentMethod"><option value="CASH">Tiền mặt</option><option value="BANK">Chuyển khoản</option></select>
+              <input name="paymentReference" maxlength="100" placeholder="Mã giao dịch" th:value="${sale.paymentReference}">
+              <button class="secondary w-full">Xác nhận đã thanh toán</button>
+            </form>
+          </details>
+          <!-- Sửa đơn mua chưa thanh toán -->
+          <details th:if="${sale.editable}">
+            <summary class="text-xs text-[#821f1c] cursor-pointer">✏️ Sửa đơn mua</summary>
+            <form th:action="@{/admin/sales/{id}/edit(id=${sale.id})}" method="post" class="mt-2 grid gap-2">
+              <label class="text-xs">Tên khách<input name="customerName" required maxlength="150" th:value="${sale.customerName}"></label>
+              <label class="text-xs">Sản phẩm
+                <select name="productId" required>
+                  <option th:each="p:${products}" th:value="${p.id}"
+                          th:if="${p.salePrice != null and p.salePrice > 0}"
+                          th:text="${p.name+' / '+p.barcode+' — '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"
+                          th:selected="${p.id == sale.product.id}">
+                  </option>
+                </select>
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="text-xs">Thanh toán<select name="paymentMethod"><option value="CASH" th:selected="${sale.paymentMethod=='CASH'}">Tiền mặt</option><option value="BANK" th:selected="${sale.paymentMethod=='BANK'}">CK</option></select></label>
+                <label class="text-xs">Mã GD<input name="paymentReference" maxlength="100" th:value="${sale.paymentReference}"></label>
+              </div>
+              <button class="secondary w-full">💾 Lưu sửa đơn</button>
+            </form>
+            <form th:action="@{/admin/sales/{id}/delete(id=${sale.id})}" method="post" class="mt-2">
+              <button class="secondary w-full text-red-700" onclick="return confirm('Xóa đơn mua CVL-M'+[[${sale.id}]]+'?')">🗑 Xóa đơn</button>
+            </form>
+          </details>
+        </td>
+      </tr></tbody>
+    </table>
+    <p th:if="${#lists.isEmpty(saleOrders)}">Chưa có đơn mua.</p>
+  </section>
+</main>
+</body>
+</html>

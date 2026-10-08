@@ -3,9 +3,7 @@
 <nav class="flex gap-3 flex-wrap mb-5">
   <a class="secondary" href="/admin/categories">🏷 Danh mục</a>
   <a class="secondary" href="/admin/users">👥 Người dùng</a>
-  <a class="secondary" href="/admin/appointments">📅 Lịch đặt</a>
-  <a class="btn" href="/admin/product/new">+ Thêm mã đồ mới</a>
-  <a class="secondary" href="/admin/qr">📋 Quản lý QR / Barcode</a>
+  <a class="btn" href="/admin/products">📦 Quản lý sản phẩm</a>
   <a class="secondary" href="/admin/home-settings">⚙ Cài đặt trang chủ</a>
   <a class="secondary" href="/staff">🖥 POS Nhân viên</a>
 </nav>
@@ -73,96 +71,13 @@
   </div>
 </div>
 
-<!-- Bảng sản phẩm: Utilization Rate -->
-<section class="panel overflow-auto">
-  <h2>📊 Tỷ lệ lấp đầy (Utilization Rate) theo kỳ</h2>
-  <p class="text-sm text-stone-500 mb-3">Tính theo thời điểm chuyển trạng thái thực tế, quy đổi ngày (24 giờ). Trên kệ = AVAILABLE/RESERVED; giặt và sửa được tách riêng. Dữ liệu cũ chưa có lịch sử chỉ phản ánh trạng thái đã lưu.</p>
-  <table class="w-full">
-    <tr>
-      <th>Sản phẩm / Mã serial</th>
-      <th>Lượt thuê</th>
-      <th>Tỷ lệ lấp đầy</th>
-      <th>Khách mặc / trên kệ</th><th>Giặt, sửa / ngừng cho thuê</th>
-      <th>Lượt hỏng/mất</th>
-      <th>Tỷ lệ hỏng/mất</th>
-      <th>Thuê / Giặt (toàn thời gian)</th>
-      <th>Thao tác</th>
-    </tr>
-    <tr th:each="s:${stats}" th:classappend="${s.product.accessory}?' bg-amber-50':''">
-      <td>
-        <a th:href="@{/admin/product/{id}(id=${s.product.id})}" class="font-medium" th:text="${s.product.name}"></a>
-        <span class="block text-xs text-stone-400" th:text="${s.product.barcode}"></span>
-        <span th:if="${s.product.accessory}" class="inline-block bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded">Phụ kiện</span>
-      </td>
-      <td th:text="${s.count}"></td>
-      <td>
-        <div class="flex items-center gap-2">
-          <div class="w-24 bg-stone-200 rounded-full h-2">
-            <div class="bg-[#821f1c] h-2 rounded-full" th:style="'width:'+${s.utilization}+'%'"></div>
-          </div>
-          <span th:text="${s.utilization+'%'}"></span>
-        </div>
-      </td>
-      <td th:text="${s.wornDays+' ngày / '+s.shelfDays+' ngày ('+s.shelfRate+'% trên kệ)'}"></td>
-      <td th:text="${s.maintenanceDays+' ngày / '+s.retiredDays+' ngày'}"></td><td th:text="${s.damaged+' hỏng / '+s.lost+' mất'}"></td>
-      <td>
-        <span th:text="${s.incidentRate+'%'}" th:classappend="${s.incidentRate > 30}?' text-red-600 font-bold':' text-stone-600'"></span>
-      </td>
-      <td th:text="${s.product.rentalCount+' / '+s.product.washCount}"></td>
-      <td><a th:href="@{/admin/product/{id}(id=${s.product.id})}" class="text-xs">Chi tiết →</a></td>
-    </tr>
-  </table>
-</section>
-
-<!-- Thống kê phụ kiện dễ mất -->
-<section class="panel overflow-auto" th:if="${!accessoryStats.isEmpty()}">
-  <h2>🔮 Thống kê Phụ Kiện Dễ Mất (Mấn, Trâm, Bội…)</h2>
-  <p class="text-sm text-stone-500 mb-3">Chỉ số mất được tách riêng khỏi hư hỏng. Tỷ lệ tính trên những lần nhận trả trong kỳ. Đề xuất nhập thêm dựa trên tồn mục tiêu của cùng tên, size, màu; cảnh báo mất theo ngưỡng cấu hình.</p>
-  <table class="w-full">
-    <tr>
-      <th>Loại phụ kiện / mẫu</th>
-      <th>Mã serial</th>
-      <th>Lượt nhận trả trong kỳ</th>
-      <th>Lượt hỏng / mất</th>
-      <th>Tỷ lệ mất</th>
-      <th>Đề xuất bổ sung</th>
-      <th>Trạng thái kho</th>
-    </tr>
-    <tr th:each="s:${accessoryStats}">
-      <td>
-        <a th:href="@{/admin/product/{id}(id=${s.product.id})}" th:text="${s.product.name}"></a>
-      </td>
-      <td th:text="${s.serials}"></td>
-      <td th:text="${s.completed}"></td>
-      <td th:text="${s.damaged+' / '+s.lost}"></td>
-      <td>
-        <span th:text="${s.lossRate+'%'}"
-              th:classappend="${s.lossAlert ? ' text-red-600 font-bold px-2 py-0.5 bg-red-50 rounded' :
-                              (s.lossRate > 0 ? ' text-orange-600 font-semibold px-2 py-0.5 bg-orange-50 rounded' : ' text-green-600')}">
-        </span>
-        <span th:if="${s.lossAlert}" class="ml-1 text-xs text-red-500">⚠ Cần bổ sung!</span>
-      </td>
-      <td>
-        <span th:if="${s.restockNeed > 0}" class="text-red-600 font-bold" th:text="${'Nhập thêm '+s.restockNeed+' bộ'}"></span>
-        <span th:unless="${s.restockNeed > 0}" class="text-stone-400">Chưa cần</span>
-      </td>
-      <td>
-        <span th:text="${s.product.stockStatus}"
-              th:classappend="${'AVAILABLE'.equals(s.product.stockStatus)}?' text-green-600':' text-orange-500'">
-        </span>
-      </td>
-    </tr>
-  </table>
-</section>
-
 <!-- Bảng giá & chính sách -->
 <form class="panel" th:action="@{/admin/policy}" method="post">
-  <h2>⚙ Giá thuê, Đặt cọc, Lịch thử và Tài khoản chuyển khoản</h2>
+  <h2>⚙ Giá thuê, Đặt cọc và Tài khoản chuyển khoản</h2>
   <div class="grid md:grid-cols-3 gap-4">
     <label>Giá cuối tuần (% ngày thường)<input name="weekendPercent" type="number" min="0" th:value="${policy.weekendPercent}" required></label>
     <label>Giá ngày lễ / Tết (%)<input name="holidayPercent" type="number" min="0" th:value="${policy.holidayPercent}" required></label>
     <label>Cọc giữ lịch (20–50%)<input name="bookingPercent" type="number" min="0" th:value="${policy.bookingPercent}" required></label>
-    <label>Số phòng thử mỗi khung giờ<input name="appointmentCapacity" type="number" min="0" th:value="${policy.appointmentCapacity}" required></label>
     <label>Thời gian giữ đơn chờ thanh toán (phút)<input name="holdMinutes" type="number" min="0" th:value="${policy.holdMinutes}" required></label>
     <label>Ship mỗi chiều (đ)<input name="shippingEachWay" type="number" min="0" th:value="${policy.shippingEachWay}" required></label>
     <label>Phạt trễ mỗi giờ (đ)<input name="lateHourly" type="number" min="0" th:value="${policy.lateHourly}" required></label>
@@ -213,34 +128,6 @@
       </tr>
     </table>
   </div>
-</section>
-
-<!-- Bảng giá đền bù / phí phạt -->
-<section class="panel">
-  <h2>⚖ Bảng Giá Đền Bù / Phí Phạt</h2>
-  <p class="text-sm text-stone-500 mb-3">Cấu hình khung phí phạt khi mất/hỏng đồ (trừ vào tiền cọc). Thêm mã mới hoặc cập nhật mức phí bên dưới.</p>
-  <!-- Form thêm mới -->
-  <form th:action="@{/admin/penalty}" method="post" class="grid md:grid-cols-5 gap-3 border-b pb-4 mb-4">
-    <label>Mã mới<input name="code" placeholder="LOST_TRAM" required pattern="[A-Z_]{2,40}"></label>
-    <label>Tên lỗi<input name="label" placeholder="Mất trâm" required></label>
-    <label>Loại sự cố<select name="incidentType"><option value="DAMAGE">Hư hỏng</option><option value="LOSS">Mất đồ</option></select></label>
-    <label>Phí đền bù (đ)<input name="amount" type="number" min="0" required value="0"></label>
-    <label>Trạng thái sau kiểm tra<select name="nextStockStatus"><option value="WASHING">WASHING</option><option value="REPAIRING">REPAIRING</option><option value="RETIRED">RETIRED</option></select></label>
-    <div class="self-end mb-3"><button class="btn w-full">Thêm mức phí</button></div>
-  </form>
-  <!-- Danh sách hiện tại -->
-  <form th:each="p:${penalties}" th:action="@{/admin/penalty}" method="post" class="grid md:grid-cols-5 gap-3 border-b py-3">
-    <label>Mã<input name="code" th:value="${p.code}" readonly class="bg-stone-50 text-stone-400"></label>
-    <label>Tên lỗi<input name="label" th:value="${p.label}" required></label>
-    <label>Loại sự cố<select name="incidentType"><option value="DAMAGE" th:selected="${p.incidentType=='DAMAGE'}">Hư hỏng</option><option value="LOSS" th:selected="${p.incidentType=='LOSS'}">Mất đồ</option></select></label>
-    <label>Phí (đ)<input name="amount" type="number" min="0" th:value="${p.amount}" required></label>
-    <label>Trạng thái sau
-      <select name="nextStockStatus">
-        <option th:each="s:${ {'WASHING','REPAIRING','RETIRED'} }" th:text="${s}" th:selected="${s==p.nextStockStatus}"></option>
-      </select>
-    </label>
-    <div class="self-end mb-3"><button class="secondary w-full">Cập nhật phí</button></div>
-  </form>
 </section>
 
 <!-- Duyệt nhân viên -->

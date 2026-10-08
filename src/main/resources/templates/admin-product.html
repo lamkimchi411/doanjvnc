@@ -29,9 +29,13 @@
     <label class="md:col-span-3">Ảnh JPEG/PNG (để trống nếu không thay đổi)<input type="file" name="image" accept="image/jpeg,image/png"></label>
   </div>
   <div class="flex gap-3 mt-4">
-    <button class="btn">Lưu mã đồ</button>
-    <a href="/admin" class="secondary">Quay lại</a>
+    <button class="btn">Lưu sản phẩm</button>
+    <a href="/admin/products" class="secondary">Quay lại danh sách</a>
   </div>
+</form>
+
+<form th:if="${product.id != null}" th:action="@{/admin/product/{id}/delete(id=${product.id})}" method="post" class="mt-3">
+  <button class="secondary text-red-700" onclick="return confirm('Xóa sản phẩm này?')">Xóa sản phẩm</button>
 </form>
 
 <!-- Thông tin vòng đời nếu đã có sản phẩm -->

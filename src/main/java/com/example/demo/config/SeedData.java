@@ -16,6 +16,9 @@ public class SeedData {
   product("Nhật Bình Bích Ngọc","Nhật Bình","S","Xanh ngọc","Lễ phục",780000,2200000,"https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=crop&w=900&q=80","Sắc bích ngọc dịu dàng, phù hợp chụp ảnh kỷ niệm."),
   accessory("Trâm cài Phượng",120000,"https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=500&q=80"), accessory("Quạt xòe Cung Đình",90000,"https://images.unsplash.com/photo-1590373529824-2069d42f6e3f?auto=format&fit=crop&w=500&q=80"), accessory("Mấn đội đầu",150000,"https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&w=500&q=80")
  ));
+  // Không thêm lại mẫu đã có khi số lượng trong kho thấp hơn ngưỡng dữ liệu mẫu.
+  var existingNames=repo.findAll().stream().map(p->p.getName().strip().toLowerCase(java.util.Locale.ROOT))
+   .collect(java.util.stream.Collectors.toSet());
   if (repo.count() < 20) repo.saveAll(List.of(
    product("Nhật Bình Hoàng Hạc","Nhật Bình","M","Vàng nghệ","Lễ phục",880000,2600000,"https://images.unsplash.com/photo-1604902396830-aca29e19eefa?auto=format&fit=crop&w=900&q=80","Nhật Bình sắc hoàng hạc với hoa văn cung đình."),
    product("Áo Tấc Huyền Vũ","Áo Tấc","L","Đen tuyền","Hoàng gia",990000,3200000,"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80","Áo Tấc trầm mặc dành cho nghi lễ trang trọng."),
@@ -30,7 +33,7 @@ public class SeedData {
    accessory("Thắt lưng Chiêu Văn",100000,"https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=80"),
    accessory("Hài Thêu Cung Đình",140000,"https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=500&q=80"),
    accessory("Quạt Lụa Song Hạc",95000,"https://images.unsplash.com/photo-1506452305024-9d59d8d5c2ee?auto=format&fit=crop&w=500&q=80")
-  ));
+  ).stream().filter(p->existingNames.add(p.getName().strip().toLowerCase(java.util.Locale.ROOT))).toList());
   repo.findAll().forEach(p -> { if (p.getBarcode() == null) { p.setBarcode("CVL-" + p.getId()); p.setStockStatus("AVAILABLE"); repo.save(p); } categories.findByNameIgnoreCase(p.getCategory()).orElseGet(() -> categories.save(Category.builder().name(p.getCategory()).description("").build())); });
   Customer customer = customers.findByEmail("lan.nguyen@covietlau.vn").orElseGet(() -> customers.save(Customer.builder().fullName("Nguyễn Thanh Lan").phone("0901234567").email("lan.nguyen@covietlau.vn").password(new BCryptPasswordEncoder().encode("123456")).build()));
   if (orders.count() == 0) {

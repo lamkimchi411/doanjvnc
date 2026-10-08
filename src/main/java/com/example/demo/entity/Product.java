@@ -13,6 +13,7 @@ public class Product {
     private String color;
     private String style;
     private long dailyPrice;
+    private Long salePrice;
     private long depositAmount;
     private boolean accessory;
     private String imageUrl;

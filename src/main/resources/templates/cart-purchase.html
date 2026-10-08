@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body class="bg-[#f6f1e8] text-stone-800">
+<header th:replace="~{fragments :: header}"></header>
+<main class="mx-auto max-w-2xl p-5 md:p-10">
+  <section class="panel">
+    <p class="text-xs tracking-widest text-[#80684d]">MUA NGAY</p>
+    <h1>Xác nhận mua sản phẩm</h1>
+    <div class="divide-y rounded border border-[#b8955e]/30 bg-[#fffaf0]">
+      <div th:each="p, stat : ${items}" class="flex items-center justify-between gap-4 p-4">
+        <div><b th:text="${stat.count+'. '+p.name}"></b><p class="text-sm text-stone-500" th:text="${p.size+' · Mã '+p.barcode}"></p></div>
+        <b class="whitespace-nowrap text-emerald-700" th:text="${#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"></b>
+      </div>
+    </div>
+    <p class="mt-4 text-right text-lg">Tổng tiền: <b class="text-emerald-700" th:text="${#numbers.formatInteger(total,1,'POINT')+'đ'}"></b></p>
+    <form th:action="@{/cart/purchase}" method="post" class="mt-5">
+      <input th:each="p:${items}" type="hidden" name="productIds" th:value="${p.id}">
+      <fieldset>
+        <legend class="font-semibold">Phương thức thanh toán</legend>
+        <label><input type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại cửa hàng</label>
+        <label><input type="radio" name="paymentMethod" value="BANK"> Chuyển khoản</label>
+      </fieldset>
+      <label class="mt-4">Mã giao dịch chuyển khoản (bắt buộc khi chuyển khoản)<input name="paymentReference" maxlength="100" placeholder="Ví dụ: MB123456"></label>
+      <div class="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" th:if="${!#strings.isEmpty(policy.bankAccount)}">Chuyển khoản tới <b th:text="${policy.bankName}"></b> · <b th:text="${policy.bankAccount}"></b> · <span th:text="${policy.bankOwner}"></span>.</div>
+      <p class="mt-4 text-sm text-stone-500">Sau khi xác nhận, các sản phẩm đã chọn được đánh dấu đã bán và bị xóa khỏi giỏ. Các sản phẩm chưa chọn vẫn được giữ lại.</p>
+      <button class="btn mt-4 w-full">Xác nhận thanh toán và tạo đơn mua</button>
+    </form>
+  </section>
+</main>
+</body>
+</html>

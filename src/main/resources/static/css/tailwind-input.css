@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .panel { @apply bg-[#fffdf8] border border-[#b8955e]/30 rounded-lg p-5 my-5 shadow-sm; }
+  .btn { @apply inline-block bg-[#821f1c] text-white rounded px-4 py-2 text-sm hover:bg-[#631713]; }
+  .secondary { @apply inline-block border border-[#821f1c] text-[#821f1c] rounded px-3 py-2 text-sm; }
+  h1 { @apply text-3xl font-serif text-[#821f1c] mb-5; }
+  h2 { @apply text-xl font-serif text-[#821f1c] mb-3; }
+  label { @apply block text-sm text-stone-600; }
+  input:not([type=hidden]):not([type=checkbox]), select, textarea { @apply block w-full border border-stone-300 rounded bg-white p-2 mt-1 mb-3 text-stone-900; }
+  th, td { @apply p-3 border-b text-left text-sm; }
+  a { @apply text-[#821f1c]; }
+  small { @apply text-stone-500; }
+}
+
+.text-wine { color: #821f1c; }
+.text-ink { color: #29231d; }
+.text-gold { color: #b8955e; }
+.bg-wine { background-color: #821f1c; }
+.bg-paper { background-color: #fffdf8; }
+.border-gold { border-color: #b8955e; }
+
+html { scroll-behavior: smooth; }
+.panel { transition: transform .35s ease, box-shadow .35s ease; }
+.panel:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(70, 41, 22, .12); }
+.btn, .secondary, nav a { transition: color .25s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.btn:hover, .secondary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(116, 27, 24, .18); }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+@media print { .no-print, header, button, form { display:none !important; } body, main, .panel { background:white !important; box-shadow:none !important; } }
+@media (max-width:640px) { body>header{padding:12px!important;align-items:flex-start}body>header>a img{height:42px}body>header nav{width:100%;gap:10px;font-size:14px!important;justify-content:flex-start}body>header nav a,body>header nav button{min-height:36px;display:inline-flex;align-items:center}main{padding-left:16px!important;padding-right:16px!important}h1{font-size:1.875rem!important}table{min-width:620px}.panel{padding:16px!important} }
