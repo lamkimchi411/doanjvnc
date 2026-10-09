@@ -2,7 +2,7 @@ services:
   - type: web
     name: co-viet-lau
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /
     envVars:
       - key: DB_URL
@@ -13,9 +13,3 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-      - key: APP_UPLOAD_DIR
-        value: /var/data/uploads
-    disk:
-      name: uploads
-      mountPath: /var/data
-      sizeGB: 1
