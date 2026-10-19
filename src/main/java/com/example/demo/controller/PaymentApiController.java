@@ -58,7 +58,8 @@ public class PaymentApiController {
         try {
             payos.verifyAndConfirm(webhook);
             return ResponseEntity.ok(Map.of("code", "00", "desc", "success"));
-        } catch (IllegalArgumentException exception) {
+        } catch (RuntimeException exception) {
+            // Không để lỗi kỹ thuật trả 500 khiến PayOS lặp webhook; giao dịch chỉ được cập nhật sau chữ ký hợp lệ.
             return ResponseEntity.badRequest().body(Map.of("code", "01", "desc", "invalid"));
         }
     }

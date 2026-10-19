@@ -83,15 +83,18 @@ public class PayosService {
     }
 
     @Transactional
-    public void verifyAndConfirm(JsonNode body) {
+    /** @return true khi đã đối soát giao dịch thật; false là webhook mẫu PayOS chưa thuộc đơn nào. */
+    public boolean verifyAndConfirm(JsonNode body) {
         if (!enabled() || body == null || !body.path("success").asBoolean() || !"00".equals(body.path("code").asText()))
             throw new IllegalArgumentException("Webhook PayOS không hợp lệ.");
         JsonNode data = body.path("data");
         if (!constantEquals(hmac(canonical(data)), body.path("signature").asText())) throw new IllegalArgumentException("Chữ ký PayOS không hợp lệ.");
         long orderCode = data.path("orderCode").asLong(-1), amount = data.path("amount").asLong(-1);
         String reference = data.path("reference").asText("");
-        PayosPayment payment = payments.findByOrderCode(orderCode).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch PayOS."));
-        if (PAID.equals(payment.getStatus())) return;
+        // PayOS gửi một giao dịch mẫu có chữ ký hợp lệ khi lưu webhook URL. Không được tạo/đánh dấu đơn từ dữ liệu mẫu này.
+        PayosPayment payment = payments.findByOrderCode(orderCode).orElse(null);
+        if (payment == null) return false;
+        if (PAID.equals(payment.getStatus())) return true;
         if (amount != payment.getAmount() || reference.isBlank()) throw new IllegalArgumentException("Dữ liệu thanh toán PayOS không khớp.");
         List<Long> ids = Arrays.stream(payment.getTargetIds().split(",")).map(Long::valueOf).toList();
         if ("RENTAL".equals(payment.getKind())) {
@@ -103,6 +106,7 @@ public class PayosService {
             for (Long id : ids) purchases.confirm(id, "BANK", reference, "PayOS");
         } else throw new IllegalArgumentException("Loại giao dịch PayOS không hợp lệ.");
         payment.setStatus(PAID); payment.setPaymentReference(reference); payment.setPaidAt(LocalDateTime.now());
+        return true;
     }
 
     public PayosPayment getOwned(Long id, String email) { var p = payments.findById(id).orElseThrow(); requireOwner(p.getCustomerEmail(), email); return p; }
