@@ -29,6 +29,7 @@ class BusinessFlowTests {
  @Autowired CustomerRepository customers;
  @Autowired CartItemRepository cartItems;
  @Autowired SaleInvoiceRepository saleInvoices;
+ @Autowired StaffAccountRepository staffAccounts;
  @Test void cartActionsKeepRentalSelectionAndRemainingProducts() throws Exception {
   var customer=customers.save(Customer.builder().email("cart-flow@test.vn").fullName("Khách thử giỏ").build());
   p.setSalePrice(300000L);products.save(p);
@@ -62,6 +63,28 @@ class BusinessFlowTests {
   mvc.perform(get("/admin/users").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk());
   mvc.perform(get("/admin/users").param("customerUpdated","").with(user("admin@test.vn").roles("ADMIN")))
    .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Đã cập nhật thông tin khách hàng.")));
+ }
+ @Test void adminCanResetStaffPasswordWithoutChangingOtherAccess() throws Exception {
+  var account=staffAccounts.save(StaffAccount.builder().email("staff-reset-"+UUID.randomUUID()+"@test.vn").fullName("Nhân viên cũ")
+   .password(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("matkhau-cu")).role("STAFF").enabled(true).build());
+  mvc.perform(post("/admin/staff/{id}/update",account.getId()).with(user("admin@test.vn").roles("ADMIN")).with(csrf())
+   .param("fullName","Nhân viên mới").param("role","STAFF").param("enabled","true").param("password","matkhau-moi"))
+   .andExpect(redirectedUrl("/admin/users?staffUpdated"));
+  var updated=staffAccounts.findById(account.getId()).orElseThrow();
+  assertEquals("Nhân viên mới",updated.getFullName());assertEquals("STAFF",updated.getRole());assertTrue(updated.isEnabled());
+  assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().matches("matkhau-moi",updated.getPassword()));
+  mvc.perform(post("/admin/staff/{id}/update",account.getId()).with(user("admin@test.vn").roles("ADMIN")).with(csrf())
+   .param("fullName","Nhân viên mới").param("role","STAFF").param("enabled","true").param("password","1234567"))
+   .andExpect(status().isBadRequest());
+ }
+ @Test void adminUserPageRendersStaffPasswordField() throws Exception {
+  var account=staffAccounts.save(StaffAccount.builder().email("staff-form-"+UUID.randomUUID()+"@test.vn").fullName("Nhân viên")
+   .password("$2a$10$NGePy0kEeY1HqzCYRnfiK.lKxHYPJcdII50Ky9bVztnRH8ayrbur.").role("STAFF").enabled(true).build());
+  String html=mvc.perform(get("/admin/users").with(user("admin@test.vn").roles("ADMIN"))).andExpect(status().isOk())
+   .andReturn().getResponse().getContentAsString();
+  assertTrue(html.contains("Mật khẩu mới"));
+  assertTrue(html.contains("form=\"staff-"+account.getId()+"\""));
+  assertTrue(html.contains("name=\"password\""));
  }
  @BeforeEach void setup(){
   mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
@@ -401,6 +424,7 @@ class BusinessFlowTests {
    .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login?registered=customer"));
   assertTrue(customers.findByEmail(email).isPresent());
   mvc.perform(post("/login").session(session).with(csrf()).param("email",email).param("password","matkhau123"))
-   .andExpect(status().is3xxRedirection());
+   .andExpect(redirectedUrl("/"))
+   .andExpect(org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated().withUsername(email));
  }
 }

@@ -117,7 +117,15 @@ public class AdminController {
   customers.save(customer);return "redirect:/admin/users?customerUpdated";
  }
  @PostMapping("/customers/{id}/delete") String deleteCustomer(@PathVariable Long id){customers.deleteById(id);return "redirect:/admin/users?customerDeleted";}
- @PostMapping("/staff/{id}/update") String updateStaff(@PathVariable Long id,@RequestParam String fullName,@RequestParam String role,@RequestParam(defaultValue="false") boolean enabled,Authentication a){var s=staff.findById(id).orElseThrow();if(s.getEmail().equals(a.getName())&&(!enabled||!"ADMIN".equals(role)))throw new IllegalArgumentException("Không thể tự tước quyền hoặc vô hiệu hóa tài khoản đang đăng nhập.");s.setFullName(fullName.trim());s.setRole("ADMIN".equals(role)?"ADMIN":"STAFF");s.setEnabled(enabled);staff.save(s);return "redirect:/admin/users?staffUpdated";}
+ @PostMapping("/staff/{id}/update") String updateStaff(@PathVariable Long id,@RequestParam String fullName,@RequestParam String role,@RequestParam(defaultValue="false") boolean enabled,@RequestParam(defaultValue="") String password,Authentication a){
+  var s=staff.findById(id).orElseThrow();
+  if(fullName.isBlank()||fullName.trim().length()>150)throw new IllegalArgumentException("Họ tên nhân viên không hợp lệ.");
+  if(!password.isBlank()&&password.length()<8)throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 8 ký tự.");
+  if(s.getEmail().equals(a.getName())&&(!enabled||!"ADMIN".equals(role)))throw new IllegalArgumentException("Không thể tự tước quyền hoặc vô hiệu hóa tài khoản đang đăng nhập.");
+  s.setFullName(fullName.trim());s.setRole("ADMIN".equals(role)?"ADMIN":"STAFF");s.setEnabled(enabled);
+  if(!password.isBlank())s.setPassword(passwordEncoder.encode(password));
+  staff.save(s);return "redirect:/admin/users?staffUpdated";
+ }
  @GetMapping({"/products","/qr"}) String qrInventory(Model m){
   var allProducts=products.findAll().stream().sorted(
    Comparator.comparing(Product::getCategory, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
