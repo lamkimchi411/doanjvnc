@@ -18,7 +18,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest @Transactional
+@SpringBootTest(properties = "app.payos.checksum-key=test-payos-checksum") @Transactional
 class BusinessFlowTests {
  @Autowired Operations ops; @Autowired ProductRepository products; @Autowired RentalOrderRepository orders;
  @Autowired OrderLineRepository lines;@Autowired PolicyRepository policies;@Autowired MoneyRepository money;
@@ -73,6 +73,16 @@ class BusinessFlowTests {
   mvc.perform(post("/api/payments/payos/webhook").contentType("application/json")
     .content("{\"code\":\"00\",\"success\":true,\"data\":{},\"signature\":\"invalid\"}"))
    .andExpect(status().isBadRequest());
+ }
+ @Test void payosWebhookAcceptsValidSignatureWithoutPaymentLinkConfiguration() throws Exception {
+  String signedData="amount=3000&orderCode=123&reference=TEST";
+  var mac=javax.crypto.Mac.getInstance("HmacSHA256");
+  mac.init(new javax.crypto.spec.SecretKeySpec("test-payos-checksum".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));
+  String signature=java.util.HexFormat.of().formatHex(mac.doFinal(signedData.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+  mvc.perform(post("/api/payments/payos/webhook").contentType("application/json")
+    .content("{\"code\":\"00\",\"success\":true,\"data\":{\"amount\":3000,\"orderCode\":123,\"reference\":\"TEST\"},\"signature\":\""+signature+"\"}"))
+   .andExpect(status().isOk())
+   .andExpect(jsonPath("$.code").value("00"));
  }
  RentalOrder book(Product product,boolean security){
   return ops.book("customer@test.vn","Khách",List.of(product.getId()),LocalDate.now(),LocalDate.now(),"PICKUP","CASH","","",security,"customer@test.vn");

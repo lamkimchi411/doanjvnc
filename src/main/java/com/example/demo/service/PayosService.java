@@ -85,7 +85,9 @@ public class PayosService {
     @Transactional
     /** @return true khi đã đối soát giao dịch thật; false là webhook mẫu PayOS chưa thuộc đơn nào. */
     public boolean verifyAndConfirm(Map<String, Object> body) {
-        if (!enabled() || body == null || !Boolean.TRUE.equals(body.get("success")) || !"00".equals(Objects.toString(body.get("code"), "")))
+        // Webhook chỉ cần checksum key để kiểm tra chữ ký. Các biến tạo payment link
+        // (client ID, API key, public URL) không được làm từ chối callback hợp lệ.
+        if (!nonBlank(checksumKey) || body == null || !Boolean.TRUE.equals(body.get("success")) || !"00".equals(Objects.toString(body.get("code"), "")))
             throw new IllegalArgumentException("Webhook PayOS không hợp lệ.");
         Map<String, Object> data = webhookData(body.get("data"));
         if (!constantEquals(hmac(canonical(data)), Objects.toString(body.get("signature"), ""))) throw new IllegalArgumentException("Chữ ký PayOS không hợp lệ.");
