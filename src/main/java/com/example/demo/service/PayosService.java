@@ -2,7 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.entity.*;
 import com.example.demo.repository.*;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -23,6 +23,7 @@ public class PayosService {
     private final SaleInvoiceRepository sales;
     private final Operations operations;
     private final PurchaseService purchases;
+    private RestClient.Builder payosClientBuilder = RestClient.builder().baseUrl("https://api-merchant.payos.vn");
 
     @Value("${app.payos.client-id:}") private String clientId;
     @Value("${app.payos.api-key:}") private String apiKey;
@@ -70,7 +71,7 @@ public class PayosService {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("orderCode", payment.getOrderCode()); body.put("amount", amount); body.put("description", description);
             body.put("cancelUrl", returnUrl); body.put("returnUrl", returnUrl); body.put("signature", hmac(payload));
-            JsonNode response = RestClient.create("https://api-merchant.payos.vn").post().uri("/v2/payment-requests")
+            JsonNode response = payosClientBuilder.build().post().uri("/v2/payment-requests")
                 .contentType(MediaType.APPLICATION_JSON).header("x-client-id", clientId).header("x-api-key", apiKey)
                 .body(body).retrieve().body(JsonNode.class);
             if (response == null || !"00".equals(response.path("code").asText()) || response.path("data").path("checkoutUrl").asText().isBlank())

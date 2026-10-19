@@ -74,6 +74,45 @@ class BusinessFlowTests {
     .content("{\"code\":\"00\",\"success\":true,\"data\":{},\"signature\":\"invalid\"}"))
    .andExpect(status().isBadRequest());
  }
+ @Test void rentalPaymentWithExpiredSessionReturnsToProtectedOrderPage() throws Exception {
+  mvc.perform(post("/payments/rentals/2").param("_csrf","token-from-expired-session"))
+   .andExpect(redirectedUrl("/orders/2"));
+  var session=new MockHttpSession();
+  mvc.perform(get("/orders/2").session(session)).andExpect(redirectedUrl("/login"));
+  var saved=(org.springframework.security.web.savedrequest.SavedRequest)session.getAttribute("SPRING_SECURITY_SAVED_REQUEST");
+  assertNotNull(saved);assertEquals("GET",saved.getMethod());assertTrue(saved.getRedirectUrl().contains("/orders/2"));
+ }
+ @Test void rentalPaymentStillRejectsInvalidCsrfForSignedInCustomer() throws Exception {
+  mvc.perform(post("/payments/rentals/2").with(user("customer@test.vn")))
+   .andExpect(status().isForbidden());
+  mvc.perform(post("/payments/rentals/2").with(user("customer@test.vn")).with(csrf().useInvalidToken()))
+   .andExpect(status().isForbidden());
+  mvc.perform(post("/admin/orders/2/delete")).andExpect(status().isForbidden());
+ }
+ @Test void rentalPaymentWithValidCsrfStillChecksOwner() throws Exception {
+  var order=book(p,false);
+  mvc.perform(post("/payments/rentals/{id}",order.getId()).with(user("stranger@test.vn")).with(csrf()))
+   .andExpect(status().isBadRequest());
+  assertEquals(0,orders.findById(order.getId()).orElseThrow().getRentalPaid());
+ }
+ @Test void rentalPaymentFormContainsCsrfToken() throws Exception {
+  var payos=context.getBean(PayosService.class);
+  var previous=new HashMap<String,Object>();
+  var values=Map.of("clientId","test-client","apiKey","test-key","publicUrl","https://shop.example");
+  values.forEach((key,value)->{
+   previous.put(key,org.springframework.test.util.ReflectionTestUtils.getField(payos,key));
+   org.springframework.test.util.ReflectionTestUtils.setField(payos,key,value);
+  });
+  try {
+   var order=book(p,false);order.setPaymentMethod("BANK");
+   String html=mvc.perform(get("/orders/{id}",order.getId()).with(user("customer@test.vn")))
+    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+   var form=java.util.regex.Pattern.compile("<form[^>]*action=\"/payments/rentals/"+order.getId()+"\"[^>]*>(.*?)</form>",java.util.regex.Pattern.DOTALL).matcher(html);
+   assertTrue(form.find());assertTrue(form.group(1).contains("name=\"_csrf\""));
+  } finally {
+   previous.forEach((key,value)->org.springframework.test.util.ReflectionTestUtils.setField(payos,key,value));
+  }
+ }
  @Test void payosWebhookAcceptsValidSignatureWithoutPaymentLinkConfiguration() throws Exception {
   String signedData="amount=3000&orderCode=123&reference=TEST";
   var mac=javax.crypto.Mac.getInstance("HmacSHA256");

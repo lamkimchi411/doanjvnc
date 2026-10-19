@@ -7,6 +7,10 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+import org.springframework.security.web.csrf.CsrfException;
 import com.example.demo.repository.*;
 
 @Configuration
@@ -29,7 +33,23 @@ public class SecurityConfig {
         // Webhook do máy chủ PayOS gọi nên không có CSRF token; chỉ giới hạn đúng nhánh webhook này.
         var bankWebhook = PathPatternRequestMatcher.withDefaults().matcher("/api/payments/webhook");
         var payosWebhook = PathPatternRequestMatcher.withDefaults().matcher("/api/payments/payos/**");
+        var rentalPayment = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/payments/rentals/{id}");
+        var accessDenied = new AccessDeniedHandlerImpl();
         return http.csrf(csrf -> csrf.ignoringRequestMatchers(bankWebhook, payosWebhook))
+            .exceptionHandling(errors -> errors.accessDeniedHandler((request, response, exception) -> {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (exception instanceof CsrfException && rentalPayment.matches(request)
+                        && !new AuthenticationTrustResolverImpl().isAuthenticated(authentication)) {
+                    // Phiên hết hạn làm token trong form cũ mất hiệu lực. Không chạy lại POST:
+                    // chuyển về trang đơn (GET), nơi Spring yêu cầu đăng nhập và lưu URL quay lại.
+                    String id = rentalPayment.matcher(request).getVariables().get("id");
+                    if (id.matches("[0-9]+")) {
+                        response.sendRedirect(request.getContextPath() + "/orders/" + id);
+                        return;
+                    }
+                }
+                accessDenied.handle(request, response, exception);
+            }))
             .authorizeHttpRequests(a -> a
             .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
             .requestMatchers(payosWebhook).permitAll()
