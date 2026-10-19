@@ -5,6 +5,7 @@ import com.example.demo.repository.RentalOrderRepository;
 import com.example.demo.service.Operations;
 import com.example.demo.service.PayosService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ public class PaymentApiController {
     private final RentalOrderRepository orders;
     private final Operations operations;
     private final PayosService payos;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.payment.webhook-secret:}")
     private String webhookSecret;
@@ -54,11 +56,12 @@ public class PaymentApiController {
 
     /** URL này được khai báo trong trang quản trị PayOS; chữ ký HMAC được kiểm tra trước khi cập nhật đơn. */
     @PostMapping("/payos/webhook")
-    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody JsonNode webhook) {
+    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody(required = false) String payload) {
         try {
+            JsonNode webhook = objectMapper.readTree(payload);
             payos.verifyAndConfirm(webhook);
             return ResponseEntity.ok(Map.of("code", "00", "desc", "success"));
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             // Không để lỗi kỹ thuật trả 500 khiến PayOS lặp webhook; giao dịch chỉ được cập nhật sau chữ ký hợp lệ.
             return ResponseEntity.badRequest().body(Map.of("code", "01", "desc", "invalid"));
         }
