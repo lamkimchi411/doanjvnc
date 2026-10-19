@@ -4,8 +4,6 @@ import com.example.demo.entity.RentalOrder;
 import com.example.demo.repository.RentalOrderRepository;
 import com.example.demo.service.Operations;
 import com.example.demo.service.PayosService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -27,7 +25,6 @@ public class PaymentApiController {
     private final RentalOrderRepository orders;
     private final Operations operations;
     private final PayosService payos;
-    private final ObjectMapper objectMapper;
 
     @Value("${app.payment.webhook-secret:}")
     private String webhookSecret;
@@ -56,9 +53,8 @@ public class PaymentApiController {
 
     /** URL này được khai báo trong trang quản trị PayOS; chữ ký HMAC được kiểm tra trước khi cập nhật đơn. */
     @PostMapping("/payos/webhook")
-    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody(required = false) String payload) {
+    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody Map<String, Object> webhook) {
         try {
-            JsonNode webhook = objectMapper.readTree(payload);
             payos.verifyAndConfirm(webhook);
             return ResponseEntity.ok(Map.of("code", "00", "desc", "success"));
         } catch (Exception exception) {

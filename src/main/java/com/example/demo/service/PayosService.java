@@ -84,13 +84,13 @@ public class PayosService {
 
     @Transactional
     /** @return true khi đã đối soát giao dịch thật; false là webhook mẫu PayOS chưa thuộc đơn nào. */
-    public boolean verifyAndConfirm(JsonNode body) {
-        if (!enabled() || body == null || !body.path("success").asBoolean() || !"00".equals(body.path("code").asText()))
+    public boolean verifyAndConfirm(Map<String, Object> body) {
+        if (!enabled() || body == null || !Boolean.TRUE.equals(body.get("success")) || !"00".equals(Objects.toString(body.get("code"), "")))
             throw new IllegalArgumentException("Webhook PayOS không hợp lệ.");
-        JsonNode data = body.path("data");
-        if (!constantEquals(hmac(canonical(data)), body.path("signature").asText())) throw new IllegalArgumentException("Chữ ký PayOS không hợp lệ.");
-        long orderCode = data.path("orderCode").asLong(-1), amount = data.path("amount").asLong(-1);
-        String reference = data.path("reference").asText("");
+        Map<String, Object> data = webhookData(body.get("data"));
+        if (!constantEquals(hmac(canonical(data)), Objects.toString(body.get("signature"), ""))) throw new IllegalArgumentException("Chữ ký PayOS không hợp lệ.");
+        long orderCode = number(data.get("orderCode")), amount = number(data.get("amount"));
+        String reference = Objects.toString(data.get("reference"), "");
         // PayOS gửi một giao dịch mẫu có chữ ký hợp lệ khi lưu webhook URL. Không được tạo/đánh dấu đơn từ dữ liệu mẫu này.
         PayosPayment payment = payments.findByOrderCode(orderCode).orElse(null);
         if (payment == null) return false;
@@ -110,9 +110,18 @@ public class PayosService {
     }
 
     public PayosPayment getOwned(Long id, String email) { var p = payments.findById(id).orElseThrow(); requireOwner(p.getCustomerEmail(), email); return p; }
-    private String canonical(JsonNode data) {
-        List<String> keys = new ArrayList<>(); data.fieldNames().forEachRemaining(keys::add); Collections.sort(keys);
-        return keys.stream().map(k -> k + "=" + (data.path(k).isNull() ? "" : data.path(k).asText())).collect(java.util.stream.Collectors.joining("&"));
+    private Map<String, Object> webhookData(Object value) {
+        if (!(value instanceof Map<?, ?> raw)) throw new IllegalArgumentException("Dữ liệu webhook PayOS không hợp lệ.");
+        Map<String, Object> data = new LinkedHashMap<>();
+        raw.forEach((key, item) -> data.put(Objects.toString(key, ""), item));
+        return data;
+    }
+    private long number(Object value) {
+        try { return value instanceof Number number ? number.longValue() : Long.parseLong(Objects.toString(value, "")); }
+        catch (NumberFormatException exception) { throw new IllegalArgumentException("Dữ liệu webhook PayOS không hợp lệ."); }
+    }
+    private String canonical(Map<String, Object> data) {
+        return data.keySet().stream().sorted().map(key -> key + "=" + Objects.toString(data.get(key), "")).collect(java.util.stream.Collectors.joining("&"));
     }
     private String hmac(String value) { try { Mac mac = Mac.getInstance("HmacSHA256"); mac.init(new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256")); return java.util.HexFormat.of().formatHex(mac.doFinal(value.getBytes(StandardCharsets.UTF_8))); } catch (Exception e) { throw new IllegalStateException("Không thể xác thực PayOS."); } }
     private boolean constantEquals(String left, String right) { return java.security.MessageDigest.isEqual(left.getBytes(StandardCharsets.UTF_8), Objects.toString(right, "").getBytes(StandardCharsets.UTF_8)); }
