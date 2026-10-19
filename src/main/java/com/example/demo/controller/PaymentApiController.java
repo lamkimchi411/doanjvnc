@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -22,6 +24,7 @@ import java.util.Set;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 public class PaymentApiController {
+    private static final Logger log = LoggerFactory.getLogger(PaymentApiController.class);
     private final RentalOrderRepository orders;
     private final Operations operations;
     private final PayosService payos;
@@ -59,6 +62,7 @@ public class PaymentApiController {
             return ResponseEntity.ok(Map.of("code", "00", "desc", "success"));
         } catch (Exception exception) {
             // Không để lỗi kỹ thuật trả 500 khiến PayOS lặp webhook; giao dịch chỉ được cập nhật sau chữ ký hợp lệ.
+            log.warn("Webhook PayOS bị từ chối: {}", exception.getMessage());
             return ResponseEntity.badRequest().body(Map.of("code", "01", "desc", "invalid"));
         }
     }
