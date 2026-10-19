@@ -60,3 +60,16 @@ Chuỗi kết nối mặc định nằm trong `src/main/resources/application.pr
 ```powershell
 mvn test
 ```
+
+## Thanh toán QR PayOS
+
+Tích hợp PayOS chỉ được bật khi máy chủ có đủ các biến môi trường sau (không ghi các khóa này vào repository):
+
+```powershell
+$env:PAYOS_CLIENT_ID = "..."
+$env:PAYOS_API_KEY = "..."
+$env:PAYOS_CHECKSUM_KEY = "..."
+$env:PAYOS_PUBLIC_URL = "https://ten-mien-cong-khai.example"
+```
+
+`PAYOS_PUBLIC_URL` phải là URL HTTPS công khai mà PayOS truy cập được. Trong trang quản trị PayOS, khai báo webhook là `https://ten-mien-cong-khai.example/api/payments/payos/webhook`. Khi khách chọn chuyển khoản cho đơn thuê hoặc đơn mua, hệ thống mở trang PayOS có mã QR; chỉ webhook có chữ ký HMAC hợp lệ mới xác nhận đơn. Nếu chưa cấu hình các biến trên, luồng chuyển khoản thủ công hiện có vẫn được giữ nguyên.

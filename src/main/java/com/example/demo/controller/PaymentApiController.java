@@ -3,6 +3,8 @@ package com.example.demo.controller;
 import com.example.demo.entity.RentalOrder;
 import com.example.demo.repository.RentalOrderRepository;
 import com.example.demo.service.Operations;
+import com.example.demo.service.PayosService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import java.util.Set;
 public class PaymentApiController {
     private final RentalOrderRepository orders;
     private final Operations operations;
+    private final PayosService payos;
 
     @Value("${app.payment.webhook-secret:}")
     private String webhookSecret;
@@ -47,6 +50,23 @@ public class PaymentApiController {
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(Map.of("accepted", false, "reason", exception.getMessage()));
         }
+    }
+
+    /** URL này được khai báo trong trang quản trị PayOS; chữ ký HMAC được kiểm tra trước khi cập nhật đơn. */
+    @PostMapping("/payos/webhook")
+    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody JsonNode webhook) {
+        try {
+            payos.verifyAndConfirm(webhook);
+            return ResponseEntity.ok(Map.of("code", "00", "desc", "success"));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("code", "01", "desc", "invalid"));
+        }
+    }
+
+    @GetMapping("/payos/{id}/status")
+    public Map<String, Object> payosStatus(@PathVariable Long id, Authentication authentication) {
+        var payment = payos.getOwned(id, authentication.getName());
+        return Map.of("paid", "PAID".equals(payment.getStatus()), "status", payment.getStatus());
     }
 
     @GetMapping("/orders/{id}/status")

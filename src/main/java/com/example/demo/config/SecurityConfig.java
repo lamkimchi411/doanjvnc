@@ -3,6 +3,7 @@ package com.example.demo.config;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.http.HttpMethod;
@@ -25,9 +26,13 @@ public class SecurityConfig {
         };
     }
     @Bean SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/payments/webhook"))
+        // Webhook do máy chủ PayOS gọi nên không có CSRF token; chỉ giới hạn đúng nhánh webhook này.
+        var bankWebhook = PathPatternRequestMatcher.withDefaults().matcher("/api/payments/webhook");
+        var payosWebhook = PathPatternRequestMatcher.withDefaults().matcher("/api/payments/payos/**");
+        return http.csrf(csrf -> csrf.ignoringRequestMatchers(bankWebhook, payosWebhook))
             .authorizeHttpRequests(a -> a
             .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
+            .requestMatchers(payosWebhook).permitAll()
             .requestMatchers("/staff/login", "/staff/register", "/login", "/register", "/", "/collection", "/product/**", "/css/**", "/js/**", "/images/**", "/uploads/**", "/error").permitAll()
             // Mọi thao tác với giỏ yêu cầu đăng nhập. Khi khách truy cập một trang GET
             // (giỏ, thuê hoặc mua), Spring Security lưu URL để trả họ về đúng trang sau đăng nhập.

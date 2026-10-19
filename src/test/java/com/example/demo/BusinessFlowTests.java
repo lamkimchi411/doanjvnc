@@ -68,6 +68,12 @@ class BusinessFlowTests {
   p=products.save(Product.builder().name("Nhật Bình kiểm thử").category("Nhật Bình").size("M").color("Đỏ").style("Lễ phục")
    .dailyPrice(100000).depositAmount(500000).barcode("TEST-"+UUID.randomUUID()).stockStatus("AVAILABLE").components("Áo ngoài, áo lót").build());
  }
+ @Test void payosWebhookBypassesCsrfButRejectsUnsignedPayload() throws Exception {
+  // PayOS không gửi CSRF token; endpoint phải đến được lớp xác thực chữ ký, không bị Spring Security trả 403.
+  mvc.perform(post("/api/payments/payos/webhook").contentType("application/json")
+    .content("{\"code\":\"00\",\"success\":true,\"data\":{},\"signature\":\"invalid\"}"))
+   .andExpect(status().isBadRequest());
+ }
  RentalOrder book(Product product,boolean security){
   return ops.book("customer@test.vn","Khách",List.of(product.getId()),LocalDate.now(),LocalDate.now(),"PICKUP","CASH","","",security,"customer@test.vn");
  }

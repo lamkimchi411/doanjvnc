@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments :: head}"></head>
+<body class="bg-[#f6f1e8] text-stone-800"><header th:replace="~{fragments :: header}"></header><main class="mx-auto max-w-xl p-5 md:p-10">
+  <section class="panel text-center"><p class="text-xs tracking-widest text-[#80684d]">PAYOS</p><h1 id="payment-title">Đang xác nhận thanh toán</h1>
+    <p id="payment-message">Chúng tôi đang nhận thông báo giao dịch từ ngân hàng. Trang sẽ tự cập nhật.</p>
+    <a class="btn mt-5" href="/account">Về đơn hàng của tôi</a>
+  </section>
+  <script th:inline="javascript">
+    const paymentId = /*[[${payment.id}]]*/ 0;
+    const statusUrl = '/api/payments/payos/' + paymentId + '/status';
+    const timer = setInterval(async () => {
+      const response = await fetch(statusUrl, {headers:{'Accept':'application/json'}});
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.paid) { clearInterval(timer); document.getElementById('payment-title').textContent='Thanh toán thành công'; document.getElementById('payment-message').textContent='Giao dịch đã được xác nhận. Đơn hàng của bạn đã được cập nhật.'; }
+    }, 2500);
+  </script>
+</main></body></html>

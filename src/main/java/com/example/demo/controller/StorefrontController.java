@@ -31,6 +31,7 @@ public class StorefrontController {
  private final CheckinGallery checkinGallery;
  private final MoneyRepository money;
  private final SaleInvoiceRepository saleInvoices; private final Operations ops; private final PurchaseService purchases; private final ImageStorage storage; private final BCryptPasswordEncoder encoder;
+ private final PayosService payos;
  public static boolean employee(Authentication a){return a!=null&&a.getAuthorities().stream().anyMatch(r->Set.of("ROLE_STAFF","ROLE_ADMIN").contains(r.getAuthority()));}
  @GetMapping("/") String home(Model m){
   m.addAttribute("productImages",displayImages());
@@ -174,13 +175,15 @@ public class StorefrontController {
  }
  @GetMapping("/cart/purchase") String cartPurchasePage(@RequestParam List<Long> productIds,HttpSession s,Authentication authentication,Model m){
   var selected=selectedCartProducts(productIds,s,authentication);
-  m.addAttribute("items",selected);m.addAttribute("total",selected.stream().mapToLong(Product::getSalePrice).sum());m.addAttribute("policy",ops.policy());return "cart-purchase";
+  m.addAttribute("items",selected);m.addAttribute("total",selected.stream().mapToLong(Product::getSalePrice).sum());m.addAttribute("policy",ops.policy());m.addAttribute("payosEnabled",payos.enabled());return "cart-purchase";
  }
  @PostMapping("/cart/purchase") @Transactional String purchaseCart(@RequestParam List<Long> productIds,@RequestParam String paymentMethod,
    @RequestParam(defaultValue="") String paymentReference,HttpSession s,Authentication authentication){
   selectedCartProducts(productIds,s,authentication);
-  purchases.buyAll(productIds,authentication.getName(),paymentMethod,paymentReference);
-  removeFromCart(productIds,s,authentication);return "redirect:/account";
+  var invoices=purchases.buyAll(productIds,authentication.getName(),paymentMethod,paymentReference);
+  removeFromCart(productIds,s,authentication);
+  if("BANK".equals(paymentMethod)&&payos.enabled())return "redirect:"+payos.createSales(invoices.stream().map(SaleInvoice::getId).toList(),authentication.getName()).getCheckoutUrl();
+  return "redirect:/account";
  }
  @PostMapping("/checkout/preview") String preview(@RequestParam LocalDateTime start,@RequestParam LocalDateTime end,@RequestParam String fulfilment,
   @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,
@@ -212,11 +215,13 @@ public class StorefrontController {
  @GetMapping("/purchase/{id}") String purchasePage(@PathVariable Long id,Model m){
   var product=products.findById(id).orElseThrow();
   if(product.getSalePrice()==null||product.getSalePrice()<=0||!"AVAILABLE".equals(product.getStockStatus()))throw new IllegalArgumentException("Sản phẩm không còn sẵn sàng để bán.");
-  m.addAttribute("product",product);m.addAttribute("policy",ops.policy());return "purchase";
+  m.addAttribute("product",product);m.addAttribute("policy",ops.policy());m.addAttribute("payosEnabled",payos.enabled());return "purchase";
  }
  @PostMapping("/purchase/{id}") String purchase(@PathVariable Long id,@RequestParam String paymentMethod,
    @RequestParam(defaultValue="") String paymentReference,Authentication a){
-  purchases.buy(id,a.getName(),paymentMethod,paymentReference);return "redirect:/account";
+  var invoice=purchases.buy(id,a.getName(),paymentMethod,paymentReference);
+  if("BANK".equals(paymentMethod)&&payos.enabled())return "redirect:"+payos.createSales(List.of(invoice.getId()),a.getName()).getCheckoutUrl();
+  return "redirect:/account";
  }
  @GetMapping({"/orders/{id}","/staff/document/{id}"}) String detail(@PathVariable Long id,@RequestParam(defaultValue="false") boolean paymentReported,Authentication a,Model m){
   var o=orders.findById(id).orElseThrow();if(!employee(a)&&!a.getName().equals(o.getCustomerEmail()))throw new IllegalArgumentException("Bạn không có quyền xem đơn này.");
@@ -231,8 +236,15 @@ public class StorefrontController {
   m.addAttribute("rentalPriceBreakdowns",orderLines.stream().collect(Collectors.toMap(OrderLine::getId,this::rentalPriceBreakdown)));
   m.addAttribute("entries",money.findByRentalOrderId(id));
   var policy=ops.policy();m.addAttribute("policy",policy);m.addAttribute("bankQrUrl",bankQrUrl(policy,o));m.addAttribute("paymentReported",paymentReported);
+  m.addAttribute("payosEnabled",payos.enabled());
   m.addAttribute("allProducts",products.findAll().stream().filter(p->!"RETIRED".equals(p.getStockStatus())).toList());
   return "order";
+ }
+ @PostMapping("/payments/rentals/{id}") String payRental(@PathVariable Long id,Authentication a){
+  return "redirect:"+payos.createRental(id,a.getName()).getCheckoutUrl();
+ }
+ @GetMapping("/payments/return/{id}") String payosReturn(@PathVariable Long id,Authentication a,Model m){
+  m.addAttribute("payment",payos.getOwned(id,a.getName()));return "payment-result";
  }
  private String bankQrUrl(ShopPolicy policy,RentalOrder order){
   var bankBin=Objects.toString(policy.getBankBin(),"").trim();
