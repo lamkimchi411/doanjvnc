@@ -87,7 +87,7 @@ public class PayosService {
     public boolean verifyAndConfirm(Map<String, Object> body) {
         // Webhook chỉ cần checksum key để kiểm tra chữ ký. Các biến tạo payment link
         // (client ID, API key, public URL) không được làm từ chối callback hợp lệ.
-        if (!nonBlank(checksumKey) || body == null || !Boolean.TRUE.equals(body.get("success")) || !"00".equals(Objects.toString(body.get("code"), "")))
+        if (!nonBlank(checksumKey) || body == null)
             throw new IllegalArgumentException("Webhook PayOS không hợp lệ.");
         Map<String, Object> data = webhookData(body.get("data"));
         if (!constantEquals(hmac(canonical(data)), Objects.toString(body.get("signature"), ""))) throw new IllegalArgumentException("Chữ ký PayOS không hợp lệ.");
@@ -96,6 +96,8 @@ public class PayosService {
         // PayOS gửi một giao dịch mẫu có chữ ký hợp lệ khi lưu webhook URL. Không được tạo/đánh dấu đơn từ dữ liệu mẫu này.
         PayosPayment payment = payments.findByOrderCode(orderCode).orElse(null);
         if (payment == null) return false;
+        if (!Boolean.TRUE.equals(body.get("success")) || !"00".equals(Objects.toString(body.get("code"), "")) || !"00".equals(Objects.toString(data.get("code"), "")))
+            throw new IllegalArgumentException("Thanh toán PayOS chưa thành công.");
         if (PAID.equals(payment.getStatus())) return true;
         if (amount != payment.getAmount() || reference.isBlank()) throw new IllegalArgumentException("Dữ liệu thanh toán PayOS không khớp.");
         List<Long> ids = Arrays.stream(payment.getTargetIds().split(",")).map(Long::valueOf).toList();

@@ -84,6 +84,16 @@ class BusinessFlowTests {
    .andExpect(status().isOk())
    .andExpect(jsonPath("$.code").value("00"));
  }
+ @Test void payosWebhookAcceptsSignedVerificationPayloadBeforeCheckingPaymentStatus() throws Exception {
+  String signedData="amount=3000&orderCode=123&reference=TEST";
+  var mac=javax.crypto.Mac.getInstance("HmacSHA256");
+  mac.init(new javax.crypto.spec.SecretKeySpec("test-payos-checksum".getBytes(java.nio.charset.StandardCharsets.UTF_8),"HmacSHA256"));
+  String signature=java.util.HexFormat.of().formatHex(mac.doFinal(signedData.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+  mvc.perform(post("/api/payments/payos/webhook").contentType("application/json")
+    .content("{\"code\":\"01\",\"success\":false,\"data\":{\"amount\":3000,\"orderCode\":123,\"reference\":\"TEST\"},\"signature\":\""+signature+"\"}"))
+   .andExpect(status().isOk())
+   .andExpect(jsonPath("$.code").value("00"));
+ }
  RentalOrder book(Product product,boolean security){
   return ops.book("customer@test.vn","Khách",List.of(product.getId()),LocalDate.now(),LocalDate.now(),"PICKUP","CASH","","",security,"customer@test.vn");
  }
