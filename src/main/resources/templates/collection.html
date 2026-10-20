@@ -20,7 +20,7 @@
    <p th:text="${#numbers.formatInteger(p.dailyPrice,1,'POINT')+'đ/giờ'}"></p>
    <p th:if="${p.salePrice != null and p.salePrice gt 0}" class="font-semibold text-emerald-700" th:text="${'Giá mua: '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"></p>
    <div class="mt-3 flex flex-wrap gap-2">
-    <a class="secondary" th:href="@{/product/{id}(id=${p.id})}">Xem chi tiết</a>
+    <a class="secondary" th:href="@{/product/{id}(id=${p.id})}">Xem</a>
     <form th:action="@{/cart/add/{id}(id=${p.id})}" method="post">
      <button class="secondary" type="submit" th:aria-label="${'Thêm '+p.name+' vào giỏ'}" title="Thêm vào giỏ">🛒<span class="sr-only">Thêm vào giỏ</span></button>
     </form>
