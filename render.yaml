@@ -3,7 +3,6 @@ services:
     name: co-viet-lau
     runtime: docker
     plan: free
-    dockerCommand: java -Dserver.address=0.0.0.0 -Dserver.port=$PORT -jar app.jar
     healthCheckPath: /
     envVars:
       - key: DB_URL
