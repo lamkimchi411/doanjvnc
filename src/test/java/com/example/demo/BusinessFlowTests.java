@@ -30,6 +30,44 @@ class BusinessFlowTests {
  @Autowired CartItemRepository cartItems;
  @Autowired SaleInvoiceRepository saleInvoices;
  @Autowired StaffAccountRepository staffAccounts;
+ @Test void staffAndAdminCanPreviewAndCheckoutTheirSessionCart() throws Exception {
+  for(var role:List.of("STAFF","ADMIN")){
+   var email="rental-"+role.toLowerCase(Locale.ROOT)+"@test.vn";
+   assertTrue(customers.findByEmail(email).isEmpty());
+   var auth=user(email).roles(role);
+   var session=new MockHttpSession();
+   var selected=products.save(Product.builder().name("Đồ thuê "+role).barcode("RENT-"+UUID.randomUUID()).dailyPrice(60000).depositAmount(140000).stockStatus("AVAILABLE").build());
+   for(var item:List.of(selected,p))
+    mvc.perform(post("/cart/add/{id}",item.getId()).session(session).with(auth).with(csrf())).andExpect(redirectedUrl("/cart"));
+   mvc.perform(get("/cart/rent").session(session).with(auth).param("productIds",selected.getId().toString())).andExpect(status().isOk());
+   mvc.perform(post("/checkout/preview").session(session).with(auth).with(csrf())
+    .param("productIds",selected.getId().toString()).param("start",LocalDate.now().plusDays(2).atTime(9,0).toString())
+    .param("end",LocalDate.now().plusDays(2).atTime(11,0).toString()).param("fulfilment","PICKUP").param("payment","BANK"))
+    .andExpect(redirectedUrl("/checkout/preview"));
+   var html=mvc.perform(get("/checkout/preview").session(session).with(auth)).andExpect(status().isOk())
+    .andExpect(view().name("quote")).andReturn().getResponse().getContentAsString();
+   assertTrue(html.contains("name=\"_csrf\""));
+   var result=mvc.perform(post("/checkout").session(session).with(auth).with(csrf())).andExpect(status().is3xxRedirection()).andReturn();
+   orders.flush();
+   var saved=orders.findByCustomerEmailOrderByIdDesc(email);
+   assertEquals(1,saved.size());
+   assertEquals("/orders/"+saved.get(0).getId(),result.getResponse().getRedirectedUrl());
+   assertEquals(selected.getId(),saved.get(0).getProduct().getId());
+   assertEquals(List.of(p.getId()),session.getAttribute("cart"));
+   mvc.perform(get("/checkout/preview").session(session).with(auth)).andExpect(redirectedUrl("/cart"));
+   mvc.perform(post("/checkout").session(session).with(auth).with(csrf())).andExpect(redirectedUrl("/cart"));
+   assertEquals(1,orders.findByCustomerEmailOrderByIdDesc(email).size());
+  }
+ }
+ @Test void rentalCheckoutStillRequiresAuthenticationAndCsrf() throws Exception {
+  mvc.perform(get("/checkout/preview")).andExpect(status().is3xxRedirection());
+  mvc.perform(post("/checkout").with(csrf())).andExpect(status().is3xxRedirection());
+  mvc.perform(post("/checkout").with(user("staff@test.vn").roles("STAFF"))).andExpect(status().isForbidden());
+  var auth=user("staff@test.vn").roles("STAFF");
+  var session=new MockHttpSession();
+  mvc.perform(get("/checkout/preview").session(session).with(auth)).andExpect(redirectedUrl("/cart"));
+  mvc.perform(post("/checkout").session(session).with(auth).with(csrf())).andExpect(redirectedUrl("/cart"));
+ }
  @Test void cartActionsKeepRentalSelectionAndRemainingProducts() throws Exception {
   var customer=customers.save(Customer.builder().email("cart-flow@test.vn").fullName("Khách thử giỏ").build());
   p.setSalePrice(300000L);products.save(p);
