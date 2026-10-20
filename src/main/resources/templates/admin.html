@@ -75,8 +75,8 @@
 <form class="panel" th:action="@{/admin/policy}" method="post">
   <h2>⚙ Giá thuê, Đặt cọc và Tài khoản chuyển khoản</h2>
   <div class="grid md:grid-cols-3 gap-4">
-    <label>Giá cuối tuần (% ngày thường)<input name="weekendPercent" type="number" min="0" th:value="${policy.weekendPercent}" required></label>
-    <label>Giá ngày lễ / Tết (%)<input name="holidayPercent" type="number" min="0" th:value="${policy.holidayPercent}" required></label>
+    <label>Giá cuối tuần (% giá giờ thường)<input name="weekendPercent" type="number" min="0" th:value="${policy.weekendPercent}" required></label>
+    <label>Giá giờ ngày lễ / Tết (%)<input name="holidayPercent" type="number" min="0" th:value="${policy.holidayPercent}" required></label>
     <label>Cọc giữ lịch (20–50%)<input name="bookingPercent" type="number" min="0" th:value="${policy.bookingPercent}" required></label>
     <label>Thời gian giữ đơn chờ thanh toán (phút)<input name="holdMinutes" type="number" min="0" th:value="${policy.holdMinutes}" required></label>
     <label>Ship mỗi chiều (đ)<input name="shippingEachWay" type="number" min="0" th:value="${policy.shippingEachWay}" required></label>
