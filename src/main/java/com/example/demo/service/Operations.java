@@ -148,7 +148,7 @@ public class Operations {
     .voucherCode(code).rentalTotal(q.rent()).depositTotal(q.security()).discountTotal(q.discount()).shippingTotal(q.shipping())
     .bookingDeposit(q.booking()).status(PENDING).holdUntil(LocalDateTime.now().plusMinutes(policy().getHoldMinutes()))
     .createdBy(actor).build();
-  o.setCollateralType(full?"PREPAY_SECURITY":"PREPAY_RENT");orders.save(o);o.setPaymentCode(paymentCode(o.getId()));
+  o.setCollateralType(full?"PREPAY_SECURITY":"PREPAY_RENT");persistWithPaymentCode(o);
   for(var p:selected){
    OrderLine l=new OrderLine();l.setRentalOrder(o);l.setProduct(p);l.setName(p.getName());l.setBarcode(p.getBarcode());
    l.setRent(price(p,start,end,policy()));l.setDeposit(p.getDepositAmount());l.setComponents(p.getComponents());lines.save(l);
@@ -161,12 +161,20 @@ public class Operations {
   require(!"DELIVERY".equals(fulfilment)||(address!=null&&address.trim().length()>=10),"Nhập địa chỉ giao hàng đầy đủ.");
   var selected=select(ids,true);selected.forEach(p->require(available(p,start,end),"Mã "+p.getBarcode()+" không còn trống trong thời gian đã chọn."));
   var quote=preview(ids,start,end,code,fulfilment,full);RentalOrder order=RentalOrder.builder().customerEmail(email).customerName(name).product(selected.get(0)).pickupDate(start.toLocalDate()).returnDate(end.toLocalDate()).pickupAt(start).returnAt(end).fulfilment(fulfilment).paymentMethod(payment).address(address).voucherCode(code).rentalTotal(quote.rent()).depositTotal(quote.security()).discountTotal(quote.discount()).shippingTotal(quote.shipping()).bookingDeposit(quote.booking()).status(PENDING).holdUntil(LocalDateTime.now().plusMinutes(policy().getHoldMinutes())).createdBy(actor).build();
-  order.setCollateralType(full?"PREPAY_SECURITY":"PREPAY_RENT");orders.save(order);order.setPaymentCode(paymentCode(order.getId()));
+  order.setCollateralType(full?"PREPAY_SECURITY":"PREPAY_RENT");persistWithPaymentCode(order);
   for(var product:selected){OrderLine line=new OrderLine();line.setRentalOrder(order);line.setProduct(product);line.setName(product.getName());line.setBarcode(product.getBarcode());line.setRent(price(product,start,end,policy()));line.setDeposit(product.getDepositAmount());line.setComponents(product.getComponents());lines.save(line);}
   return order;
  }
  private RentalOrder locked(Long id) {
   var o=em.find(RentalOrder.class,id,LockModeType.PESSIMISTIC_WRITE);require(o!=null,"Không tìm thấy đơn.");return o;
+ }
+ private void persistWithPaymentCode(RentalOrder order){
+  // Một số cơ sở dữ liệu đã triển khai yêu cầu payment_code không được rỗng ngay khi INSERT.
+  // Mã tạm chỉ tồn tại trong lúc lấy khóa chính, sau đó luôn được đổi sang mã đơn hiển thị cho khách.
+  order.setPaymentCode(UUID.randomUUID().toString().replace("-", ""));
+  orders.saveAndFlush(order);
+  order.setPaymentCode(paymentCode(order.getId()));
+  orders.saveAndFlush(order);
  }
  private String paymentCode(Long id){return String.format(Locale.ROOT,"DH%08d",id);}
  private void entry(RentalOrder o,String kind,long amount,String method,String reference,String actor){

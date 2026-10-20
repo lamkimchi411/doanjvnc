@@ -211,7 +211,9 @@ class BusinessFlowTests {
   assertThrows(IllegalArgumentException.class,()->book(p,false));
   o.setHoldUntil(LocalDateTime.now().minusMinutes(1));orders.saveAndFlush(o);
   assertTrue(o.isHoldExpired());
-  assertNotNull(book(p,false).getId());
+  var created=book(p,false);
+  assertNotNull(created.getId());
+  assertEquals(String.format("DH%08d",created.getId()),created.getPaymentCode());
  }
  @Test void staffCanConfirmAnExpiredCounterHoldWhenTheProductIsStillAvailable(){
   var order=book(p,false);
