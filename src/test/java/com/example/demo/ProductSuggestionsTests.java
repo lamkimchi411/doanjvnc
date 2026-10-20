@@ -61,6 +61,7 @@ class ProductSuggestionsTests {
    if(query.isEmpty())assertTrue(shown.stream().anyMatch(p->p.getId().equals(other.getId())));
    var html=result.getResponse().getContentAsString();
    assertTrue(html.contains("/product/"+original.getId()+"\""));
+   assertTrue(html.contains("/cart/add/"+original.getId()+"\""));
    assertFalse(html.contains("/product/"+duplicate.getId()+"\""));
    assertFalse(html.contains("/images/duplicate.png"));
   }
