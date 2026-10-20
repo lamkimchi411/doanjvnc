@@ -189,10 +189,12 @@ public class StorefrontController {
  @PostMapping("/checkout/preview") String preview(@RequestParam LocalDateTime start,@RequestParam LocalDateTime end,@RequestParam String fulfilment,
   @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,
   @RequestParam(defaultValue="false") boolean full,@RequestParam(required=false) List<Long> productIds,HttpSession s,Authentication authentication){
+  if(cartCustomer(authentication).isEmpty())return "redirect:/login";
   var ids=rentalSelection(productIds,s,authentication);
   s.setAttribute("checkoutPreview",new CheckoutPreview(start,end,fulfilment,payment,address,code,full,ids));return "redirect:/checkout/preview";
  }
  @GetMapping("/checkout/preview") String previewPage(HttpSession s,Authentication authentication,Model m){
+  if(cartCustomer(authentication).isEmpty()){s.removeAttribute("checkoutPreview");return "redirect:/login";}
   var preview=(CheckoutPreview)s.getAttribute("checkoutPreview");
   if(preview==null)return "redirect:/cart";
   if(!cart(s,authentication).containsAll(preview.productIds())){s.removeAttribute("checkoutPreview");return "redirect:/cart";}
@@ -210,6 +212,7 @@ public class StorefrontController {
   m.addAttribute("address",preview.address());m.addAttribute("code",preview.code());m.addAttribute("full",preview.full());return "quote";
  }
  @PostMapping("/checkout") @Transactional String checkout(HttpSession s,Authentication a){
+  if(cartCustomer(a).isEmpty()){s.removeAttribute("checkoutPreview");return "redirect:/login";}
   var preview=(CheckoutPreview)s.getAttribute("checkoutPreview");
   if(preview==null||!cart(s,a).containsAll(preview.productIds())){s.removeAttribute("checkoutPreview");return "redirect:/cart";}
   var o=ops.book(a.getName(),a.getName(),preview.productIds(),preview.start(),preview.end(),preview.fulfilment(),preview.payment(),preview.address(),preview.code(),preview.full(),a.getName());
