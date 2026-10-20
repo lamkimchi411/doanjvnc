@@ -15,8 +15,8 @@
     <form th:action="@{/purchase/{id}(id=${product.id})}" method="post" class="mt-5">
       <fieldset>
         <legend class="font-semibold">Phương thức thanh toán</legend>
-        <label><input type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại cửa hàng</label>
-        <label><input type="radio" name="paymentMethod" value="BANK"> <span th:text="${payosEnabled ? 'Quét QR qua PayOS' : 'Chuyển khoản'}"></span></label>
+        <label class="flex items-center gap-2"><input class="!m-0 !h-4 !w-4 !p-0" type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại cửa hàng</label>
+        <label class="flex items-center gap-2"><input class="!m-0 !h-4 !w-4 !p-0" type="radio" name="paymentMethod" value="BANK"> <span th:text="${payosEnabled ? 'Quét QR qua PayOS' : 'Chuyển khoản'}"></span></label>
       </fieldset>
       <label class="mt-4" th:if="${!payosEnabled}">Mã giao dịch chuyển khoản (bắt buộc khi chuyển khoản)
         <input name="paymentReference" maxlength="100" placeholder="Ví dụ: MB123456">

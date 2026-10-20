@@ -18,8 +18,8 @@
       <input th:each="p:${items}" type="hidden" name="productIds" th:value="${p.id}">
       <fieldset>
         <legend class="font-semibold">Phương thức thanh toán</legend>
-        <label><input type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại cửa hàng</label>
-        <label><input type="radio" name="paymentMethod" value="BANK"> <span th:text="${payosEnabled ? 'Quét QR qua PayOS' : 'Chuyển khoản'}"></span></label>
+        <label class="flex items-center gap-2"><input class="!m-0 !h-4 !w-4 !p-0" type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại cửa hàng</label>
+        <label class="flex items-center gap-2"><input class="!m-0 !h-4 !w-4 !p-0" type="radio" name="paymentMethod" value="BANK"> <span th:text="${payosEnabled ? 'Quét QR qua PayOS' : 'Chuyển khoản'}"></span></label>
       </fieldset>
       <label class="mt-4" th:if="${!payosEnabled}">Mã giao dịch chuyển khoản (bắt buộc khi chuyển khoản)<input name="paymentReference" maxlength="100" placeholder="Ví dụ: MB123456"></label>
       <div class="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" th:if="${!#strings.isEmpty(policy.bankAccount)}">Chuyển khoản tới <b th:text="${policy.bankName}"></b> · <b th:text="${policy.bankAccount}"></b> · <span th:text="${policy.bankOwner}"></span>.</div>
