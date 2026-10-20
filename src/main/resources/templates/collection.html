@@ -18,7 +18,9 @@
    <small th:text="${p.category+' · '+p.size+' · '+p.barcode}"></small>
    <h2 th:text="${p.name}"></h2>
    <p th:text="${#numbers.formatInteger(p.dailyPrice,1,'POINT')+'đ/ngày thường'}"></p>
+   <p th:if="${p.salePrice != null and p.salePrice gt 0}" class="font-semibold text-emerald-700" th:text="${'Giá mua: '+#numbers.formatInteger(p.salePrice,1,'POINT')+'đ'}"></p>
    <a class="secondary mt-3" th:href="@{/product/{id}(id=${p.id})}">Xem chi tiết</a>
+   <a th:if="${p.salePrice != null and p.salePrice gt 0 and p.stockStatus == 'AVAILABLE'}" class="btn mt-3" th:href="@{/purchase/{id}(id=${p.id})}">Mua ngay</a>
   </article>
  </div>
 </main>
