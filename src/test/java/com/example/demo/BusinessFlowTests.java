@@ -46,7 +46,7 @@ class BusinessFlowTests {
   String start=LocalDate.now().plusDays(2).atTime(9,0).toString(),end=LocalDate.now().plusDays(2).atTime(17,0).toString();
   mvc.perform(post("/checkout/preview").session(session).with(auth).with(csrf()).param("productIds",p.getId().toString()).param("start",start).param("end",end).param("fulfilment","PICKUP").param("payment","CASH")).andExpect(redirectedUrl("/checkout/preview"));
   mvc.perform(get("/checkout/preview").session(session).with(auth)).andExpect(status().isOk()).andExpect(model().attribute("productIds",List.of(p.getId())));
-  mvc.perform(post("/checkout").session(session).with(auth).with(csrf()).param("productIds",p.getId().toString()).param("start",start).param("end",end).param("fulfilment","PICKUP").param("payment","CASH")).andExpect(status().is3xxRedirection());
+  mvc.perform(post("/checkout").session(session).with(auth).with(csrf())).andExpect(status().is3xxRedirection());
   assertFalse(cartItems.existsByCustomerIdAndProductId(customer.getId(),p.getId()));
   assertTrue(cartItems.existsByCustomerIdAndProductId(customer.getId(),other.getId()));
   mvc.perform(get("/checkout/preview").session(session).with(auth)).andExpect(redirectedUrl("/cart"));

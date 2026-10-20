@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @Controller @RequiredArgsConstructor
 public class StorefrontController {
  private record CheckoutPreview(LocalDateTime start,LocalDateTime end,String fulfilment,String payment,String address,String code,boolean full,List<Long> productIds) {}
+ private record RentalQuoteLine(String name,long hourlyRate,long hours,long baseTotal,long finalTotal) {}
  @lombok.Getter @lombok.RequiredArgsConstructor
  private static class RentalPriceBreakdown {
   private final long hours;
@@ -195,17 +196,24 @@ public class StorefrontController {
   var preview=(CheckoutPreview)s.getAttribute("checkoutPreview");
   if(preview==null)return "redirect:/cart";
   if(!cart(s,authentication).containsAll(preview.productIds())){s.removeAttribute("checkoutPreview");return "redirect:/cart";}
+  var quote=ops.preview(preview.productIds(),preview.start(),preview.end(),preview.code(),preview.fulfilment(),preview.full());
+  long hours=Math.max(1,(java.time.temporal.ChronoUnit.MINUTES.between(preview.start(),preview.end())+59)/60);
+  var policy=ops.policy();
+  var selected=products.findAllById(preview.productIds()).stream().collect(Collectors.toMap(Product::getId,p->p));
+  m.addAttribute("rentalLines",preview.productIds().stream().map(id->{
+   var product=selected.get(id);long baseTotal=product.getDailyPrice()*hours;
+   return new RentalQuoteLine(product.getName(),product.getDailyPrice(),hours,baseTotal,ops.price(product,preview.start(),preview.end(),policy));
+  }).toList());
   m.addAttribute("productIds",preview.productIds());
-  m.addAttribute("quote",ops.preview(preview.productIds(),preview.start(),preview.end(),preview.code(),preview.fulfilment(),preview.full()));
+  m.addAttribute("quote",quote);
   m.addAttribute("start",preview.start());m.addAttribute("end",preview.end());m.addAttribute("fulfilment",preview.fulfilment());m.addAttribute("payment",preview.payment());
   m.addAttribute("address",preview.address());m.addAttribute("code",preview.code());m.addAttribute("full",preview.full());return "quote";
  }
- @PostMapping("/checkout") @Transactional String checkout(@RequestParam LocalDateTime start,@RequestParam LocalDateTime end,@RequestParam String fulfilment,
-  @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,
-  @RequestParam(defaultValue="false") boolean full,@RequestParam(required=false) List<Long> productIds,HttpSession s,Authentication a){
-  var ids=rentalSelection(productIds,s,a);
-  var o=ops.book(a.getName(),a.getName(),ids,start,end,fulfilment,payment,address,code,full,a.getName());
-  removeFromCart(ids,s,a);s.removeAttribute("checkoutPreview");return "redirect:/orders/"+o.getId();
+ @PostMapping("/checkout") @Transactional String checkout(HttpSession s,Authentication a){
+  var preview=(CheckoutPreview)s.getAttribute("checkoutPreview");
+  if(preview==null||!cart(s,a).containsAll(preview.productIds())){s.removeAttribute("checkoutPreview");return "redirect:/cart";}
+  var o=ops.book(a.getName(),a.getName(),preview.productIds(),preview.start(),preview.end(),preview.fulfilment(),preview.payment(),preview.address(),preview.code(),preview.full(),a.getName());
+  removeFromCart(preview.productIds(),s,a);s.removeAttribute("checkoutPreview");return "redirect:/orders/"+o.getId();
  }
  @GetMapping("/account") String account(Authentication a,Model m){
   m.addAttribute("orders",orders.findByCustomerEmailOrderByIdDesc(a.getName()).stream().filter(o->!Boolean.TRUE.equals(o.getCustomerDeleted())).toList());
