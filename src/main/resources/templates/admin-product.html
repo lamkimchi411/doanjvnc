@@ -20,6 +20,7 @@
     <label>Màu sắc<input name="color" th:value="${product.color}" required placeholder="Đỏ"></label>
     <label>Phong cách<input name="style" th:value="${product.style}" required placeholder="Triều Nguyễn"></label>
     <label>Giá thuê / ngày thường (đ)<input type="number" min="0" step="1000" name="dailyPrice" th:value="${product.dailyPrice}" required></label>
+    <label>Giá mua (đ, để trống nếu chưa mở bán)<input type="number" min="1000" step="1000" name="salePrice" th:value="${product.salePrice}" placeholder="Ví dụ: 2500000"></label>
     <label>Cọc bảo đảm (đ)<input type="number" min="0" step="10000" name="depositAmount" th:value="${product.depositAmount}" required></label>
     <label class="md:col-span-1">
       <span class="flex items-center gap-2 mt-6"><input type="checkbox" name="accessory" value="true" th:checked="${product.accessory}"> <b>Là phụ kiện</b> (mấn, trâm, bội…)</span>

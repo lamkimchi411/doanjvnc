@@ -374,6 +374,10 @@ class BusinessFlowTests {
   var productPage=mvc.perform(get("/product/"+p.getId())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
   assertTrue(productPage.contains("Giá mua: 250.000đ"));
   assertTrue(productPage.contains("/purchase/"+p.getId()));
+  var adminProductPage=mvc.perform(get("/admin/product/"+p.getId()).with(user("admin@test.vn").roles("ADMIN")))
+   .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+  assertTrue(adminProductPage.contains("name=\"salePrice\""));
+  assertTrue(adminProductPage.contains("value=\"250000\""));
   mvc.perform(get("/purchase/"+p.getId())).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
   mvc.perform(get("/purchase/"+p.getId()).with(user("customer@test.vn").roles("CUSTOMER"))).andExpect(status().isOk());
   mvc.perform(get("/login")).andExpect(status().isOk());
