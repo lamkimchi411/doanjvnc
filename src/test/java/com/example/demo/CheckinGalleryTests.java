@@ -87,7 +87,7 @@ class CheckinGalleryTests {
   assertFalse(html.contains("Sửa ảnh / phụ đề"));
   var admin=mvc.perform(get("/").with(user("admin").roles("ADMIN"))).andExpect(status().isOk())
    .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-  assertEquals(6,admin.split("Sửa ảnh / phụ đề",-1).length-1);
+  assertFalse(admin.contains("Sửa ảnh / phụ đề"));
  }
  @Test void settingsHaveSixInputsAndRequireAdminAndCsrf() throws Exception {
   var html=mvc.perform(get("/admin/home-settings").with(user("admin").roles("ADMIN"))).andExpect(status().isOk())

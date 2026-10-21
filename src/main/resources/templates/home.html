@@ -39,18 +39,16 @@
       <div class="checkin-wing checkin-left">
         <figure th:each="frame,stat:${checkinLeft}" th:if="${stat.index lt 3}" class="checkin-frame" th:style="${'--i:'+stat.index}" th:attr="data-checkin-slot=${frame.slot}">
           <img th:if="${!#strings.isEmpty(frame.imageUrl)}" th:src="${frame.imageUrl}" th:alt="${frame.title}" loading="lazy">
-          <div th:if="${#strings.isEmpty(frame.imageUrl)}" class="checkin-empty">Góc check-in <span th:text="${stat.count}"></span><small>Ảnh đang được cập nhật</small></div>
-          <figcaption th:text="${frame.title}"></figcaption>
-          <a th:if="${isAdmin}" class="checkin-edit" th:href="@{/admin/home-settings}+'#'+${frame.slot}">Sửa ảnh / phụ đề</a>
+          <div th:if="${#strings.isEmpty(frame.imageUrl)}" class="checkin-empty"><span th:text="${frame.title}">Góc check-in</span><small>Ảnh đang được cập nhật</small></div>
+          <figcaption th:unless="${#strings.isEmpty(frame.imageUrl)}" th:text="${frame.title}"></figcaption>
         </figure>
       </div>
       <div class="checkin-path" aria-hidden="true"><span>✦</span></div>
       <div class="checkin-wing checkin-right">
         <figure th:each="frame,stat:${checkinRight}" th:if="${stat.index lt 3}" class="checkin-frame" th:style="${'--i:'+(stat.index+3)}" th:attr="data-checkin-slot=${frame.slot}">
           <img th:if="${!#strings.isEmpty(frame.imageUrl)}" th:src="${frame.imageUrl}" th:alt="${frame.title}" loading="lazy">
-          <div th:if="${#strings.isEmpty(frame.imageUrl)}" class="checkin-empty">Góc check-in <span th:text="${stat.count+3}"></span><small>Ảnh đang được cập nhật</small></div>
-          <figcaption th:text="${frame.title}"></figcaption>
-          <a th:if="${isAdmin}" class="checkin-edit" th:href="@{/admin/home-settings}+'#'+${frame.slot}">Sửa ảnh / phụ đề</a>
+          <div th:if="${#strings.isEmpty(frame.imageUrl)}" class="checkin-empty"><span th:text="${frame.title}">Góc check-in</span><small>Ảnh đang được cập nhật</small></div>
+          <figcaption th:unless="${#strings.isEmpty(frame.imageUrl)}" th:text="${frame.title}"></figcaption>
         </figure>
       </div>
     </div>
