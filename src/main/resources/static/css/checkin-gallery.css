@@ -35,7 +35,7 @@
 .checkin-right{grid-column:3;transform:scale(.93) rotateY(-14deg)}
 .checkin-frame{position:relative;min-width:0;margin:0;padding:7px 4px 5px;background:linear-gradient(105deg,#d8c6aa,#e8d8bf 48%,#c9b494);border:1px solid #c9b795;box-shadow:inset 0 0 0 1px #f5ecd9,2px 3px 0 -1px #bba586,0 12px 18px -10px #402d2133}
 /* Độ lệch cố định độc lập với animation để các khung luôn cao thấp so le. */
-.checkin-frame{top:var(--step,0px);animation:checkin-slide-right .65s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0)*.07s)}
+.checkin-frame{top:var(--step,0px);animation:checkin-slide-right .65s cubic-bezier(.22,1,.36,1) calc(var(--i,0)*.07s) both,checkin-drift 3s ease-in-out 1s infinite}
 .checkin-left .checkin-frame:nth-child(2),.checkin-right .checkin-frame:nth-child(odd){--step:44px}
 /* Hoa văn long vân đối xứng trên đỉnh/chân khung, không che ảnh và phụ đề. */
 .checkin-frame::before,.checkin-frame::after{content:"";position:absolute;pointer-events:none;left:14%;width:72%;height:22px;background:url('/images/checkin-long-van.svg') center/100% 100% no-repeat;opacity:.55;filter:drop-shadow(0 1px 1px #b99b6e33)}
@@ -56,10 +56,12 @@
 .checkin-gallery nav a{border:1px solid #b8955e;border-radius:3px;padding:12px 24px;background:linear-gradient(#fffbed,#f0dfbf);box-shadow:0 3px 0 #b8955e33;color:#713124;transition:box-shadow .3s,background .3s}
 .checkin-gallery nav a:hover{background:#fffaf0;box-shadow:0 6px 20px #8d683d25}
 .checkin-gallery a:focus-visible{outline:3px solid #ad7c31;outline-offset:5px}
-/* Khi tải lại trang, sáu khung lần lượt trượt nhanh từ trái vào vị trí trong 1 giây.
-   Rê chuột lên vùng ảnh sẽ tạm dừng cả sáu khung; giữ ảnh rõ khi đang dừng. */
+/* Trượt vào khi tải trang, sau đó chuyển động ngang liên tục để vẫn thấy khi cuộn tới.
+   Sáu khung chuyển động cùng nhịp trong khoảng đệm 16px, không lấn thêm vào đường.
+   Rê chuột tạm dừng cả hai hiệu ứng; rời chuột tiếp tục tại đúng vị trí đang dừng. */
 .checkin-stage:hover .checkin-frame,.checkin-stage:focus-within .checkin-frame{animation-play-state:paused}
 @keyframes checkin-slide-right{from{transform:translateX(-70px)}to{transform:translateX(0)}}
+@keyframes checkin-drift{0%,100%{transform:translateX(0)}25%{transform:translateX(12px)}75%{transform:translateX(-12px)}}
 @keyframes checkin-light{0%,100%{opacity:.55}50%{opacity:1}}
 @media(max-width:1000px){.checkin-stage{grid-template-columns:1fr;gap:50px;padding:40px 0 20px}.checkin-path{display:none}.checkin-wing{grid-column:1;transform:none;gap:15px}.checkin-stage::before{inset:15% -20px 0}.checkin-frame img,.checkin-empty{height:230px}}
 @media(max-width:540px){.checkin-wing{grid-template-columns:repeat(2,minmax(0,1fr));gap:38px 16px}.checkin-gallery{padding:36px 20px 0}.checkin-frame{padding:7px 4px 5px}.checkin-frame img,.checkin-empty{height:210px}.checkin-frame figcaption{font-size:14px}}
