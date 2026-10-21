@@ -49,6 +49,7 @@ class BusinessFlowTests {
    .param("amount","500000").param("method","CASH").param("reference","Hoàn đủ"))
    .andExpect(status().is3xxRedirection());
   assertEquals("Đã hoàn cọc",order.getRefundStatus());
+  assertEquals(Operations.RETURNED,order.getDisplayStatus());
   mvc.perform(post(endpoint).with(user("admin@test.vn").roles("ADMIN")).with(csrf())
    .param("amount","0").param("method","CASH").param("reference","Sửa ghi nhận nhầm"))
    .andExpect(status().is3xxRedirection());

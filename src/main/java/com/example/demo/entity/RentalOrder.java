@@ -53,7 +53,10 @@ public class RentalOrder {
             ? "Đã hoàn cọc một phần" : "Đã hoàn cọc";
     }
     public String getDisplayStatus() {
-        return "Đã hoàn cọc".equals(status) ? getRefundStatus() : status;
+        // Hoàn tất quyết toán hoặc hoàn đủ toàn bộ cọc đều xác nhận đồ đã được nhận trả.
+        // Tiền hoàn được hiển thị riêng ở cột hoàn cọc, không thay thế trạng thái đơn.
+        if ("Đã hoàn cọc".equals(status) || (securityPaid > 0 && refundedDeposit >= securityPaid)) return "Đã trả đồ";
+        return status;
     }
 
     /** Khách chỉ được sửa/xóa khi chưa thu cọc hay bất kỳ khoản thanh toán nào. */

@@ -11,7 +11,7 @@
   <section class="panel overflow-auto">
     <h2>Đơn thuê</h2>
     <table class="w-full"><thead><tr><th>STT</th><th>Mã đơn</th><th>Khách hàng</th><th>Thời gian thuê</th><th>Trạng thái</th><th class="text-right">Tiền thuê</th><th>Thao tác</th></tr></thead>
-      <tbody><tr th:each="order, stat:${rentalOrders}"><td th:text="${stat.count}"></td><td th:text="${'CVL-'+order.id}"></td><td><span th:text="${order.customerName}"></span><small class="block" th:text="${order.customerEmail}"></small></td><td th:text="${order.pickupDate+' → '+order.returnDate}"></td><td><b th:text="${order.holdExpired ? 'Hết hạn giữ chỗ' : order.status}"></b><small th:if="${order.holdExpired}" class="block font-medium text-red-700" th:text="${'Chưa nhận cọc, hết hạn lúc '+#temporals.format(order.holdUntil, 'dd/MM HH:mm')}"></small></td><td class="text-right" th:text="${#numbers.formatInteger(order.rentalTotal,1,'POINT')+'đ'}"></td><td class="min-w-56">
+      <tbody><tr th:each="order, stat:${rentalOrders}"><td th:text="${stat.count}"></td><td th:text="${'CVL-'+order.id}"></td><td><span th:text="${order.customerName}"></span><small class="block" th:text="${order.customerEmail}"></small></td><td th:text="${order.pickupDate+' → '+order.returnDate}"></td><td><b th:text="${order.holdExpired ? 'Hết hạn giữ chỗ' : order.displayStatus}"></b><small th:if="${order.holdExpired}" class="block font-medium text-red-700" th:text="${'Chưa nhận cọc, hết hạn lúc '+#temporals.format(order.holdUntil, 'dd/MM HH:mm')}"></small></td><td class="text-right" th:text="${#numbers.formatInteger(order.rentalTotal,1,'POINT')+'đ'}"></td><td class="min-w-56">
         <a class="secondary" th:href="@{/orders/{id}(id=${order.id})}">Chi tiết</a>
 
         <!-- Chuyển trạng thái đơn chờ thanh toán -->
