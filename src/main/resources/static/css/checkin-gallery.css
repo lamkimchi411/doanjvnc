@@ -4,15 +4,20 @@
 .home-video-player iframe{display:block;width:100%;height:100%;border:0}
 .home-video>p{display:flex;flex-wrap:wrap;justify-content:center;gap:24px;margin:16px 0 0;color:#80684d;font-size:13px}
 .home-video a:hover{text-decoration:underline}
-/* Ảnh nền chuyển động chậm; các thẻ ảnh nổi nhẹ, lệch nhịp giữa các cột. */
-.home-hero>div:first-child{overflow:hidden}
-.home-hero>div:first-child>img,.home-hero>article>div>img{animation:home-image-pan 18s ease-in-out infinite alternate}
-.home-hero [data-home-collection]>a,.home-hero aside figure{animation:home-card-float 7s ease-in-out infinite}
-.home-hero [data-home-collection]>a:nth-child(2),.home-hero aside figure:nth-child(2){animation-delay:-2.3s}
-.home-hero [data-home-collection]>a:nth-child(3){animation-delay:-4.6s}
-.home-hero [data-home-collection]:hover>a,.home-hero [data-home-collection]:focus-within>a,.home-hero aside figure:hover{animation-play-state:paused}
-@keyframes home-image-pan{from{transform:scale(1.035) translateX(-.6%)}to{transform:scale(1.07) translateX(.6%)}}
-@keyframes home-card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+/* Tăng biên độ và nhịp chuyển động để ảnh nền, bộ sưu tập và chất liệu dễ nhận thấy hơn. */
+.home-hero>div:first-child,.home-hero>article>div{overflow:hidden}
+.home-hero>div:first-child>img,.home-hero>article>div>img{animation:home-image-pan 9s ease-in-out infinite alternate}
+.home-hero [data-home-collection]>a,.home-hero aside figure{animation:home-card-float 4.5s ease-in-out infinite}
+.home-hero [data-home-collection]>a:nth-child(2),.home-hero aside figure:nth-child(2){animation-delay:-1.5s}
+.home-hero [data-home-collection]>a:nth-child(3){animation-delay:-3s}
+/* Dừng trên vùng chứa cố định để ảnh không rung khi di chuyển khỏi con trỏ.
+   Dùng trạng thái paused để rời chuột tiếp tục đúng nhịp, không chạy lại từ đầu. */
+.home-hero>div:first-child:hover>img,.home-hero>div:first-child:focus-within>img,
+.home-hero>article>div:hover>img,.home-hero>article>div:focus-within>img,
+.home-hero [data-home-collection]:hover>a,.home-hero [data-home-collection]:focus-within>a,
+.home-hero aside div:has(>figure):hover>figure,.home-hero aside div:has(>figure):focus-within>figure{animation-play-state:paused}
+@keyframes home-image-pan{from{transform:scale(1.08) translateX(-2%)}to{transform:scale(1.15) translateX(2%)}}
+@keyframes home-card-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 /* Khung long vân và phối cảnh cung đình dùng SVG/CSS, không cần JavaScript. */
 /* Chỉ hòa nền ảnh vào màu giấy, không làm mờ chữ, nút hay các khung sản phẩm. */
 .home-hero>div:first-child::after{content:"";position:absolute;inset:auto 0 0;height:180px;pointer-events:none;background:linear-gradient(to bottom,rgba(255,253,248,0),rgba(255,253,248,.35) 35%,rgba(255,253,248,.82) 72%,#FFFDF8)}
@@ -52,8 +57,9 @@
 .checkin-gallery nav a:hover{background:#fffaf0;box-shadow:0 6px 20px #8d683d25}
 .checkin-gallery a:focus-visible{outline:3px solid #ad7c31;outline-offset:5px}
 /* Khi tải lại trang, sáu khung lần lượt trượt nhanh từ trái vào vị trí trong 1 giây.
-   Vùng cắt của từng dãy giữ ảnh trong hai bên; kết thúc đứng yên, không bị dừng mờ khi rê chuột. */
-@keyframes checkin-slide-right{from{transform:translateX(-70px);opacity:0}to{transform:translateX(0);opacity:1}}
+   Rê chuột lên vùng ảnh sẽ tạm dừng cả sáu khung; giữ ảnh rõ khi đang dừng. */
+.checkin-stage:hover .checkin-frame,.checkin-stage:focus-within .checkin-frame{animation-play-state:paused}
+@keyframes checkin-slide-right{from{transform:translateX(-70px)}to{transform:translateX(0)}}
 @keyframes checkin-light{0%,100%{opacity:.55}50%{opacity:1}}
 @media(max-width:1000px){.checkin-stage{grid-template-columns:1fr;gap:50px;padding:40px 0 20px}.checkin-path{display:none}.checkin-wing{grid-column:1;transform:none;gap:15px}.checkin-stage::before{inset:15% -20px 0}.checkin-frame img,.checkin-empty{height:230px}}
 @media(max-width:540px){.checkin-wing{grid-template-columns:repeat(2,minmax(0,1fr));gap:38px 16px}.checkin-gallery{padding:36px 20px 0}.checkin-frame{padding:7px 4px 5px}.checkin-frame img,.checkin-empty{height:210px}.checkin-frame figcaption{font-size:14px}}
