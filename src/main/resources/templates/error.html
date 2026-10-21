@@ -7,7 +7,7 @@
   <section class="panel text-center">
     <p class="mb-2 text-xs tracking-[.2em] text-[#80684d]" th:text="${status != null ? 'MÃ LỖI '+status : 'THÔNG BÁO'}">THÔNG BÁO</p>
     <h1 th:text="${status == 403 ? 'Bạn không có quyền truy cập' : (status == 404 ? 'Không tìm thấy trang' : 'Không thể thực hiện yêu cầu')}">Không thể thực hiện yêu cầu</h1>
-    <p class="mx-auto max-w-lg text-stone-600" th:text="${message != null and !#strings.isEmpty(message) ? message : 'Yêu cầu không thể hoàn tất. Vui lòng kiểm tra lại hoặc thử lại sau.'}">Yêu cầu không thể hoàn tất.</p>
+    <p class="mx-auto max-w-lg text-stone-600" th:text="${status == 413 ? 'Biểu mẫu tải lên vượt giới hạn cho phép. Mỗi ảnh tối đa 10 MB, tổng biểu mẫu tối đa 200 MB. Hãy giảm dung lượng hoặc rút ngắn tên file rồi thử lại.' : (message != null and !#strings.isEmpty(message) ? message : 'Yêu cầu không thể hoàn tất. Vui lòng kiểm tra lại hoặc thử lại sau.')}">Yêu cầu không thể hoàn tất.</p>
     <div class="mt-6 flex justify-center gap-3">
       <a href="/" class="btn">Về trang chủ</a>
       <a href="/collection" class="secondary">Xem bộ sưu tập</a>
