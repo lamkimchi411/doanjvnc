@@ -301,9 +301,8 @@ public class Operations {
  }
  @Transactional public void checkout(Long id,String scanned,String condition,String collateral,String reference,String method,String actor){
   var o=locked(id);require(Set.of(RESERVED,PREPARING).contains(o.getStatus()),"Đơn chưa sẵn sàng bàn giao.");
-  LocalDateTime pickup=o.getPickupAt()!=null?o.getPickupAt():o.getPickupDate().atStartOfDay();
-  LocalDateTime returnAt=o.getReturnAt()!=null?o.getReturnAt():o.getReturnDate().plusDays(1).atStartOfDay();
-  require(!LocalDateTime.now().isBefore(pickup)&&!LocalDateTime.now().isAfter(returnAt),"Chỉ bàn giao trong thời gian thuê.");
+  LocalDate today=LocalDate.now();
+  require(!today.isBefore(o.getPickupDate())&&!today.isAfter(o.getReturnDate()),"Chỉ bàn giao trong thời gian thuê.");
   var items=lines.findByRentalOrderId(id); verifyScans(items,scanned);
   require(Set.of("CASH_DEPOSIT","CCCD","PASSPORT").contains(collateral),"Loại đảm bảo không hợp lệ.");
   require(condition!=null&&!condition.isBlank(),"Nhập tình trạng bàn giao.");
@@ -372,8 +371,27 @@ public class Operations {
   entry(o,"SECURITY_APPLIED",retained,method,reference,actor);
   entry(o,"PENALTY_IN",o.getExtraDue(),method,reference,actor);
   long refund=Math.max(0,o.getSecurityPaid()-o.getPenaltyTotal());
-  entry(o,"SECURITY_REFUND",refund,method,reference,actor);
+  // Chỉ chi phần còn lại nếu đã ghi nhận hoàn cọc từ trang biên bản.
+  entry(o,"SECURITY_REFUND",Math.max(0,refund-o.getRefundedDeposit()),method,reference,actor);
   o.setRefundedDeposit(refund);o.setRefundReference(reference);o.setRefundedAt(LocalDateTime.now());o.setStatus(REFUNDED);
+ }
+ @Transactional public void updateRefundRecord(Long id,long amount,String method,String reference,String actor){
+  var o=locked(id);
+  require(amount>=0&&amount<=o.getRefundLimit(),
+   "Cọc đã hoàn phải từ 0 đến số cọc thực thu còn lại sau khi trừ phí phạt.");
+  require(method!=null&&Set.of("CASH","BANK").contains(method),"Phương thức không hợp lệ.");
+  var note=Objects.toString(reference,"").trim();
+  require(!note.isBlank()&&note.length()<=120,"Nhập mã biên nhận hoặc lý do điều chỉnh (tối đa 120 ký tự).");
+  long difference=amount-o.getRefundedDeposit();
+  if(difference!=0){
+   // Ghi chênh lệch có dấu để giữ lịch sử và để báo cáo cộng đúng tổng hoàn thực tế.
+   MoneyEntry adjustment=new MoneyEntry();
+   adjustment.setRentalOrder(o);adjustment.setKind("SECURITY_REFUND");adjustment.setAmount(difference);
+   adjustment.setMethod(method);adjustment.setReference("Điều chỉnh: "+note);
+   adjustment.setActor(actor);adjustment.setRecordedAt(LocalDateTime.now());money.save(adjustment);
+   o.setRefundedAt(amount==0?null:LocalDateTime.now());
+  }
+  o.setRefundedDeposit(amount);o.setRefundReference(note);
  }
  private void change(Product p,String next,String actor,String note){
   InventoryEvent event=new InventoryEvent();event.setProduct(p);event.setPreviousStatus(p.getStockStatus());event.setNextStatus(next);

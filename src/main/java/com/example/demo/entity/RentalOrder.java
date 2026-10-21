@@ -45,6 +45,17 @@ public class RentalOrder {
     private Boolean customerDeleted;
     @ManyToOne(optional = false) private Product product;
 
+    /** Trạng thái hoàn tiền dùng chung cho chi tiết, danh sách và bản in. */
+    public long getRefundLimit() { return Math.max(0, securityPaid - penaltyTotal); }
+    public String getRefundStatus() {
+        if (refundedDeposit == 0) return "Chưa hoàn cọc";
+        return refundedDeposit < getRefundLimit()
+            ? "Đã hoàn cọc một phần" : "Đã hoàn cọc";
+    }
+    public String getDisplayStatus() {
+        return "Đã hoàn cọc".equals(status) ? getRefundStatus() : status;
+    }
+
     /** Khách chỉ được sửa/xóa khi chưa thu cọc hay bất kỳ khoản thanh toán nào. */
     public boolean isEditable() { return "Chờ thanh toán".equals(status) && rentalPaid == 0 && securityPaid == 0 && !Boolean.TRUE.equals(customerDeleted); }
     /** Đơn quá hạn giữ chỗ nhưng chưa nhận cọc, dùng để cảnh báo theo từng đơn. */

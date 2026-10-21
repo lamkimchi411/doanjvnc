@@ -282,6 +282,12 @@ public class StorefrontController {
   order.setBookingPaymentReference(reference.trim());orders.save(order);return "redirect:/orders/"+id+"?paymentReported";
  }
  @PostMapping("/orders/{id}/cancel") String cancel(@PathVariable Long id,Authentication a){ops.cancel(id,a.getName(),employee(a));return "redirect:/orders/"+id;}
+ @PostMapping("/orders/{id}/refund-record") String updateRefundRecord(@PathVariable Long id,
+  @RequestParam long amount,@RequestParam String method,@RequestParam String reference,Authentication a){
+  if(!employee(a))throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+  ops.updateRefundRecord(id,amount,method,reference,a.getName());
+  return "redirect:/orders/"+id+"?refundUpdated";
+ }
  @PostMapping("/orders/{id}/edit") String editOrder(@PathVariable Long id,@RequestParam List<Long> productIds,@RequestParam String customerName,
    @RequestParam LocalDateTime start,@RequestParam LocalDateTime end,@RequestParam String fulfilment,
    @RequestParam String payment,@RequestParam(defaultValue="") String address,@RequestParam(defaultValue="") String code,Authentication a){

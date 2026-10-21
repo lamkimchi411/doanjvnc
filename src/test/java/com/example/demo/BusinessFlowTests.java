@@ -30,6 +30,58 @@ class BusinessFlowTests {
  @Autowired CartItemRepository cartItems;
  @Autowired SaleInvoiceRepository saleInvoices;
  @Autowired StaffAccountRepository staffAccounts;
+ @Test void employeesCanUpdateRefundRecordAndViewsStayConsistent() throws Exception {
+  var order=book(p,false);
+  order.setSecurityPaid(500000);order.setStatus(Operations.RESERVED);orders.saveAndFlush(order);
+  String endpoint="/orders/"+order.getId()+"/refund-record";
+  mvc.perform(post(endpoint).with(user("staff@test.vn").roles("STAFF")).with(csrf())
+   .param("amount","200000").param("method","CASH").param("reference","Biên nhận 1"))
+   .andExpect(redirectedUrl("/orders/"+order.getId()+"?refundUpdated"));
+  assertEquals(200000,order.getRefundedDeposit());assertEquals("Đã hoàn cọc một phần",order.getRefundStatus());
+  assertEquals(Operations.RESERVED,order.getStatus());
+  mvc.perform(get("/orders/"+order.getId()).with(user("staff@test.vn").roles("STAFF")))
+   .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(endpoint)))
+   .andExpect(content().string(org.hamcrest.Matchers.containsString("Đã hoàn cọc một phần")));
+  mvc.perform(get("/account").with(user("customer@test.vn")))
+   .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("200000đ")))
+   .andExpect(content().string(org.hamcrest.Matchers.containsString("Đã hoàn cọc một phần")));
+  mvc.perform(post(endpoint).with(user("admin@test.vn").roles("ADMIN")).with(csrf())
+   .param("amount","500000").param("method","CASH").param("reference","Hoàn đủ"))
+   .andExpect(status().is3xxRedirection());
+  assertEquals("Đã hoàn cọc",order.getRefundStatus());
+  mvc.perform(post(endpoint).with(user("admin@test.vn").roles("ADMIN")).with(csrf())
+   .param("amount","0").param("method","CASH").param("reference","Sửa ghi nhận nhầm"))
+   .andExpect(status().is3xxRedirection());
+  assertEquals(0,order.getRefundedDeposit());assertEquals("Chưa hoàn cọc",order.getRefundStatus());
+  assertNull(order.getRefundedAt());
+  assertEquals(0,money.findByRentalOrderId(order.getId()).stream().filter(e->"SECURITY_REFUND".equals(e.getKind())).mapToLong(MoneyEntry::getAmount).sum());
+  assertEquals(3,money.findByRentalOrderId(order.getId()).size());
+ }
+ @Test void refundRecordRejectsCustomerCsrfAndInvalidAmounts() throws Exception {
+  var order=book(p,false);order.setSecurityPaid(500000);order.setPenaltyTotal(100000);orders.saveAndFlush(order);
+  var endpoint="/orders/"+order.getId()+"/refund-record";
+  mvc.perform(post(endpoint).with(user("customer@test.vn")).with(csrf()).param("amount","1").param("method","CASH").param("reference","test"))
+   .andExpect(status().isForbidden());
+  mvc.perform(post(endpoint).with(user("admin@test.vn").roles("ADMIN")).param("amount","1").param("method","CASH").param("reference","test"))
+   .andExpect(status().isForbidden());
+  mvc.perform(get("/orders/"+order.getId()).with(user("customer@test.vn"))).andExpect(status().isOk())
+   .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(endpoint))));
+  for(long amount:List.of(-1L,400001L))
+   mvc.perform(post(endpoint).with(user("staff@test.vn").roles("STAFF")).with(csrf())
+    .param("amount",Long.toString(amount)).param("method","CASH").param("reference","test")).andExpect(status().isBadRequest());
+  assertEquals(0,order.getRefundedDeposit());assertTrue(money.findByRentalOrderId(order.getId()).isEmpty());
+ }
+ @Test void settlementRefundsOnlyRemainingDepositAfterManualRecord(){
+  var order=book(p,false);order.setSecurityPaid(500000);order.setStatus(Operations.RETURNED);orders.saveAndFlush(order);
+  ops.updateRefundRecord(order.getId(),200000,"CASH","Hoàn trước","staff");
+  ops.updateRefundRecord(order.getId(),200000,"CASH","Hoàn trước","staff");
+  ops.refund(order.getId(),"CASH","Hoàn phần còn lại","staff");
+  assertEquals(500000,order.getRefundedDeposit());
+  assertEquals(500000,money.findByRentalOrderId(order.getId()).stream().filter(e->"SECURITY_REFUND".equals(e.getKind())).mapToLong(MoneyEntry::getAmount).sum());
+  assertEquals(2,money.findByRentalOrderId(order.getId()).size());
+  ops.updateRefundRecord(order.getId(),0,"CASH","Điều chỉnh nhầm","admin");
+  assertEquals("Chưa hoàn cọc",order.getDisplayStatus());
+ }
  @Test void staffAndAdminCanPreviewAndCheckoutTheirSessionCart() throws Exception {
   for(var role:List.of("STAFF","ADMIN")){
    var email="rental-"+role.toLowerCase(Locale.ROOT)+"@test.vn";
@@ -196,6 +248,17 @@ class BusinessFlowTests {
  }
  RentalOrder book(Product product,boolean security){
   return ops.book("customer@test.vn","Khách",List.of(product.getId()),LocalDate.now(),LocalDate.now(),"PICKUP","CASH","","",security,"customer@test.vn");
+ }
+ @Test void checkoutAllowsHandoverAtAnyTimeOnBookedDay(){
+  var order=book(p,false);
+  order.setPickupAt(LocalDateTime.now().plusHours(2));
+  order.setReturnAt(LocalDateTime.now().plusHours(6));
+  orders.saveAndFlush(order);
+  ops.confirm(order.getId(),"CASH","PHIEU-01","staff");
+
+  ops.checkout(order.getId(),p.getBarcode(),"Đủ áo, không rách","CASH_DEPOSIT","PHIEU-02","CASH","staff");
+
+  assertEquals(Operations.RENTED,order.getStatus());
  }
  @Test void counterRentalSavesPhoneAndRejectsInvalidPhone() throws Exception {
   var auth=user("staff@test.vn").roles("STAFF");

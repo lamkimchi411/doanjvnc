@@ -165,7 +165,7 @@
       <!-- Status badge -->
       <div class="text-right">
       <span class="text-xs font-bold px-3 py-1 rounded-full"
-            th:text="${o.holdExpired ? 'Hết hạn giữ chỗ' : o.status}"
+            th:text="${o.holdExpired ? 'Hết hạn giữ chỗ' : o.displayStatus}"
             th:classappend="${'Chờ thanh toán'.equals(o.status) ? ' bg-amber-100 text-amber-700' :
                             ('Đã cọc giữ lịch'.equals(o.status) ? ' bg-yellow-100 text-yellow-700' :
                             ('Đang chuẩn bị đồ'.equals(o.status) ? ' bg-sky-100 text-sky-700' :
@@ -173,6 +173,7 @@
                             ('Đã trả đồ'.equals(o.status) ? ' bg-orange-100 text-orange-700' :
                             ('Đã hoàn cọc'.equals(o.status) ? ' bg-purple-100 text-purple-700' : ' bg-stone-100 text-stone-500')))))}">
       </span>
+      <p class="mt-1 text-xs" th:text="${o.refundStatus+' · '+o.refundedDeposit+'đ'}"></p>
       <p th:if="${o.holdExpired}" class="mt-1 text-xs font-medium text-red-700" th:text="${'Chưa nhận cọc, hết hạn lúc '+#temporals.format(o.holdUntil, 'dd/MM HH:mm')}"></p>
       </div>
       <a th:href="@{/orders/{id}(id=${o.id})}" class="secondary text-xs">Chi tiết / in biên bản →</a>
